@@ -1,0 +1,116 @@
+---
+title: "Analysis: Growth Curves"
+author: "Silverman et al."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+subtitle: Source file available in the [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/growth_curves_analysis.Rmd)
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(readxl) # reading excel file
+library(openxlsx) # writing excel file
+library(knitr) # generating reports
+library(latex2exp) # for latex plot labels
+source(file.path("lib", "functions.R"))
+opts_chunk$set(
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2017_Silverman_et_al-"))
+```
+
+# Load Data
+
+```{r}
+OD_data <- read_excel(file.path("data", "2017_Silverman_et_al-OD_data.xlsx"))
+```
+
+# Growth curves
+
+```{r SI_growth_curves, fig.width = 10, fig.height = 7}
+# summarize OD
+OD_summary <- 
+  bind_rows(
+    mutate(OD_data, scale = "OD750"),
+    mutate(filter(OD_data, OD750 > 0, type == "sample"), scale = "log10 (OD750)", OD750 = log10(OD750))
+  ) %>% 
+  group_by(day, type, organism, scale, pN2) %>% 
+  summarize(err = sd(OD750), OD750 = mean(OD750)) %>% 
+  mutate(pN2_formatted = sprintf("%0.1f bar", pN2))
+
+# plot OD
+OD_summary %>% 
+  ggplot() +
+  # plot-wide aesthetics
+  aes(x = day, y = OD750, fill = pN2_formatted, color = pN2_formatted, shape = type) +
+  # error bars
+  geom_errorbar(data = function(df) filter(df, !is.na(err)), 
+                map = aes(ymin = OD750 - err, ymax = OD750 + err), width = 0.2, alpha = 0.6) +
+  # line and points
+  geom_line(size = 1) +
+  geom_point(size = 2, color = "black") +
+  # OD cutoff
+  geom_hline(
+    data = data_frame(scale = c("OD750", "log10 (OD750)"), cutoff = c(0.4, log10(0.4))),
+    map = aes(yintercept = cutoff, color = NULL, fill = NULL, shape = NULL)
+  ) +
+  # panels
+  facet_grid(scale~organism, space = "free_x", scales = "free") + 
+  # scale
+  scale_x_continuous(breaks = 0:25) +
+  scale_color_manual(values = cbPalette) +
+  scale_fill_manual(values = cbPalette) +
+  scale_shape_manual(values = c(21:26)) +
+  # labels
+  labs(x = "day", y = TeX("$OD_{750}$"), color = expression("pN"[2]), fill = expression("pN"[2]), size = 5) +
+  # theme
+  theme_figure(grid = FALSE, text_size = 20) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) 
+```
+
+# Growth rates
+
+## Analysis
+
+```{r calculate_growth_rates}
+# calculate growth rates
+growth_rates <- 
+  OD_data %>% 
+  filter(day > 0, OD750 > 0, type == "sample", pN2 > 0, OD750 > 0.01, OD750 <= 0.4) %>% 
+  nest(-organism, -pN2) %>%
+  mutate(
+    fit = map(data, ~summary(lm(log(OD750) ~ day, data = .x))),
+    coefficients = map(fit, "coefficients"),
+    growth_rate.day = map_dbl(coefficients, `[`, 2, 1),
+    growth_rate_se.day = map_dbl(coefficients, `[`, 2, 2),
+    r2 = map_dbl(fit, "r.squared")
+  ) %>% 
+  select(-data, -fit, -coefficients)
+growth_rates %>% write.xlsx(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
+kable(growth_rates, d=2)
+```
+
+## Visualization
+
+```{r SI_growth_rates, fig.width = 8, fig.height = 6}
+# plot growth rates
+growth_rates %>% 
+  ggplot() + 
+  aes(pN2, growth_rate.day, color = organism, shape = organism) +
+  geom_errorbar(aes(ymin = growth_rate.day - growth_rate_se.day, ymax = growth_rate.day + growth_rate_se.day), width = 0) +
+  geom_point(size = 5) +
+  scale_color_brewer("Species", palette = "Set1") +
+  scale_shape_manual("Species", values = c(16, 15)) + 
+  labs(y = "growth rate [1/day]", x = TeX("$pN_{2}$ \\[bar\\]")) +
+  theme_figure() 
+```
+
