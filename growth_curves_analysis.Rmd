@@ -1,6 +1,6 @@
 ---
 title: "Analysis: Growth Curves"
-author: "Silverman et al."
+author: "Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure."
 date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
   html_document: 
@@ -11,7 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
-subtitle: Source file available in the [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/growth_curves_analysis.Rmd)
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/) / [growth_curves_analysis.Rmd](http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/growth_curves_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
 ---
@@ -22,6 +22,9 @@ library(readxl) # reading excel file
 library(openxlsx) # writing excel file
 library(knitr) # generating reports
 library(latex2exp) # for latex plot labels
+library(boot) # bootstrap sample means
+library(broom) # processing regression data
+set.seed(42) # start random seed
 source(file.path("lib", "functions.R"))
 opts_chunk$set(
   dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
@@ -36,29 +39,56 @@ OD_data <- read_excel(file.path("data", "2017_Silverman_et_al-OD_data.xlsx"))
 
 # Growth curves
 
-```{r SI_growth_curves, fig.width = 10, fig.height = 7}
-# summarize OD
-OD_summary <- 
-  bind_rows(
-    mutate(OD_data, scale = "OD750"),
-    mutate(filter(OD_data, OD750 > 0, type == "sample"), scale = "log10 (OD750)", OD750 = log10(OD750))
-  ) %>% 
-  group_by(day, type, organism, scale, pN2) %>% 
-  summarize(err = sd(OD750), OD750 = mean(OD750)) %>% 
-  mutate(pN2_formatted = sprintf("%0.1f bar", pN2))
+## Bootstrapped means for OD data
 
-# plot OD
-OD_summary %>% 
+```{r}
+n_bootstrap <- 1000
+OD_summary <- OD_data %>% 
+  nest(-organism, -pN2, -type, -day) %>% 
+  mutate(
+    # number of samples
+    n_samples = map_int(data, nrow),
+    # bootstrap data to estimate mean and standard error
+    bootstrap = map(data, function(.x) {
+      if (nrow(.x) > 1) boot(data = .x$OD750, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)
+      else list(t = .x$OD750)
+    }),
+    OD750_mean = map_dbl(bootstrap, ~mean(.x$t)),
+    OD750_mean_se = map_dbl(bootstrap, ~sd(.x$t))
+  ) %>% 
+  mutate(
+    OD750_mean_ue = OD750_mean + OD750_mean_se,
+    OD750_mean_le = OD750_mean - OD750_mean_se,
+    pN2_formatted = sprintf("%0.1f bar", pN2)
+  )
+```
+
+## Visualization of all data and means
+
+```{r SI_growth_curves, fig.width = 10, fig.height = 7}
+# plot OD both on linear and log scale
+bind_rows(
+  # linear scale data
+  mutate(OD_summary, scale = "OD750"),
+  # log scale data
+  mutate(filter(OD_summary, OD750_mean > 0, day > 0, type == "sample"), scale = "log10 (OD750)", 
+         data = map(data, ~mutate(.x, OD750 = log10(OD750))),
+         OD750_mean = log10(OD750_mean),
+         OD750_mean_le = log10(OD750_mean_le),
+         OD750_mean_ue = log10(OD750_mean_ue))
+) %>% 
   ggplot() +
   # plot-wide aesthetics
-  aes(x = day, y = OD750, fill = pN2_formatted, color = pN2_formatted, shape = type) +
-  # error bars
-  geom_errorbar(data = function(df) filter(df, !is.na(err)), 
-                map = aes(ymin = OD750 - err, ymax = OD750 + err), width = 0.2, alpha = 0.6) +
-  # line and points
+  aes(x = day, y = OD750_mean, fill = pN2_formatted, color = pN2_formatted, shape = type) +
+  # all data (small translucent points)
+  geom_point(data = function(df) unnest(df, data), map = aes(y = OD750), size = 1, alpha = 0.5) +
+  # error bars (1 SE) for averages
+  geom_errorbar(data = function(df) filter(df, !is.na(OD750_mean_se)), 
+                map = aes(ymin = OD750_mean_le, ymax = OD750_mean_ue), width = 0.2, alpha = 0.6) +
+  # averages and lines connection them
   geom_line(size = 1) +
-  geom_point(size = 2, color = "black") +
-  # OD cutoff
+  geom_point(size = 3, color = "black") +
+  # OD cutoff indicator for growth rate calculations
   geom_hline(
     data = data_frame(scale = c("OD750", "log10 (OD750)"), cutoff = c(0.4, log10(0.4))),
     map = aes(yintercept = cutoff, color = NULL, fill = NULL, shape = NULL)
@@ -88,13 +118,20 @@ growth_rates <-
   filter(day > 0, OD750 > 0, type == "sample", pN2 > 0, OD750 > 0.01, OD750 <= 0.4) %>% 
   nest(-organism, -pN2) %>%
   mutate(
-    fit = map(data, ~summary(lm(log(OD750) ~ day, data = .x))),
-    coefficients = map(fit, "coefficients"),
-    growth_rate.day = map_dbl(coefficients, `[`, 2, 1),
-    growth_rate_se.day = map_dbl(coefficients, `[`, 2, 2),
-    r2 = map_dbl(fit, "r.squared")
+    # bootstrap slope from regression model
+    bootstrap = map(data, ~boot(data = .x, R = n_bootstrap,
+      statistic = function (x, idx) {
+        # model fit for resampled data
+        m <- lm(log(OD750) ~ day, data = x[idx,])
+        r2 <- glance(m)$r.squared
+        slope <- tidy(m)$estimate[2]
+        return(c(slope, r2))
+      })),
+    growth_rate.day = map_dbl(bootstrap, ~mean(.x$t[,1])),
+    growth_rate_se.day = map_dbl(bootstrap, ~sd(.x$t[,1])),
+    r2 = map_dbl(bootstrap, ~mean(.x$t[,2]))
   ) %>% 
-  select(-data, -fit, -coefficients)
+  select(-bootstrap, -data)
 growth_rates %>% write.xlsx(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
 kable(growth_rates, d=2)
 ```
