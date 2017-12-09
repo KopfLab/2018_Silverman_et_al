@@ -81,13 +81,13 @@ bind_rows(
   # plot-wide aesthetics
   aes(x = day, y = OD750_mean, fill = pN2_formatted, color = pN2_formatted, shape = type) +
   # all data (small translucent points)
-  geom_point(data = function(df) unnest(df, data), map = aes(y = OD750), size = 1, alpha = 0.5) +
+  geom_point(data = function(df) unnest(df, data), map = aes(y = OD750), size = 2, alpha = 0.5) +
   # error bars (1 SE) for averages
   geom_errorbar(data = function(df) filter(df, !is.na(OD750_mean_se)), 
                 map = aes(ymin = OD750_mean_le, ymax = OD750_mean_ue), width = 0.2, alpha = 0.6) +
   # averages and lines connection them
   geom_line(size = 1) +
-  geom_point(size = 3, color = "black") +
+  geom_point(size = 4, color = "black") +
   # OD cutoff indicator for growth rate calculations
   geom_hline(
     data = data_frame(scale = c("OD750", "log10 (OD750)"), cutoff = c(0.4, log10(0.4))),
@@ -122,7 +122,7 @@ growth_rates <-
     bootstrap = map(data, ~boot(data = .x, R = n_bootstrap,
       statistic = function (x, idx) {
         # model fit for resampled data
-        m <- lm(log(OD750) ~ day, data = x[idx,])
+        m <- lm(log(OD750/min(OD750)) ~ day, data = x[idx,])
         r2 <- glance(m)$r.squared
         slope <- tidy(m)$estimate[2]
         return(c(slope, r2))
