@@ -1,5 +1,8 @@
 # constantes and templates ====
 
+# start random seed
+set.seed(42) 
+
 # color-blind palette (source: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/)
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7", "#F0E442", "#999999")
 
