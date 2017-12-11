@@ -24,7 +24,6 @@ library(knitr) # generating reports
 library(latex2exp) # for latex plot labels
 library(boot) # bootstrap sample means
 library(broom) # processing regression data
-set.seed(42) # start random seed
 source(file.path("lib", "functions.R"))
 opts_chunk$set(
   dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
@@ -53,12 +52,13 @@ OD_summary <- OD_data %>%
       if (nrow(.x) > 1) boot(data = .x$OD750, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)
       else list(t = .x$OD750)
     }),
+    # bootstrapped based mean and standard error
     OD750_mean = map_dbl(bootstrap, ~mean(.x$t)),
-    OD750_mean_se = map_dbl(bootstrap, ~sd(.x$t))
-  ) %>% 
-  mutate(
+    OD750_mean_se = map_dbl(bootstrap, ~sd(.x$t)),
+    # error bars upper and lower
     OD750_mean_ue = OD750_mean + OD750_mean_se,
     OD750_mean_le = OD750_mean - OD750_mean_se,
+    # pN2 formatted for legend
     pN2_formatted = sprintf("%0.1f bar", pN2)
   )
 ```

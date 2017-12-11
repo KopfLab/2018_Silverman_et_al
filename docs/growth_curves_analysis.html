@@ -11,7 +11,7 @@
 
 <meta name="author" content="Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure." />
 
-<meta name="date" content="2017-12-08" />
+<meta name="date" content="2017-12-11" />
 
 <title>Analysis: Growth Curves</title>
 
@@ -238,7 +238,7 @@ div.tocify {
 <h1 class="title toc-ignore">Analysis: Growth Curves</h1>
 <h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/growth_curves_analysis.Rmd">growth_curves_analysis.Rmd</a></em></h3>
 <h4 class="author"><em>Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure.</em></h4>
-<h4 class="date"><em>08 Dec 2017</em></h4>
+<h4 class="date"><em>11 Dec 2017</em></h4>
 
 </div>
 
@@ -262,12 +262,13 @@ OD_summary &lt;- OD_data %&gt;%
       if (nrow(.x) &gt; 1) boot(data = .x$OD750, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)
       else list(t = .x$OD750)
     }),
+    # bootstrapped based mean and standard error
     OD750_mean = map_dbl(bootstrap, ~mean(.x$t)),
-    OD750_mean_se = map_dbl(bootstrap, ~sd(.x$t))
-  ) %&gt;% 
-  mutate(
+    OD750_mean_se = map_dbl(bootstrap, ~sd(.x$t)),
+    # error bars upper and lower
     OD750_mean_ue = OD750_mean + OD750_mean_se,
     OD750_mean_le = OD750_mean - OD750_mean_se,
+    # pN2 formatted for legend
     pN2_formatted = sprintf(&quot;%0.1f bar&quot;, pN2)
   )</code></pre>
 </div>
