@@ -1,0 +1,250 @@
+---
+title: "Analysis: Heterocyst Spacing"
+author: "Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/heterocyst_analysis.Rmd)"
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(readxl) # reading excel file
+library(openxlsx) # writing excel file
+library(knitr) # generating reports
+library(latex2exp) # for latex plot labels
+library(boot) # bootstrap sample means
+library(broom) # efficient retrieval of model parameters
+source(file.path("lib", "functions.R"))
+opts_chunk$set(
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2017_Silverman_et_al-"))
+```
+
+# Load Data
+
+```{r}
+heterocyst_data <- read_excel(file.path("data", "2017_Silverman_et_al-heterocyst_data.xlsx"))
+```
+
+# All heterocyst data
+
+## Summary plot with all stationary phase data points
+
+```{r SI_heterocysts_all_data, fig.width = 10, fig.height = 5}
+heterocyst_data %>% 
+  # select stationary phase data
+  filter(growth_phase == "stationary") %>% 
+  # define global plot aesthetics
+  ggplot(aes(x = pN2, fill = factor(pN2))) + 
+  # individual data points
+  geom_jitter(map = aes(y = n_cbh, shape = factor(experiment)), alpha = 0.3, width = 0.02, color = "black") + 
+  # box plot
+  geom_boxplot(map = aes(y = n_cbh), alpha = 0.5, color = "black", width=0.1, outlier.alpha = 0, coef = 0) + 
+  # averages
+  geom_point(data = calculate_cbh_avgs, map = aes(y = n_cbh.avg), size = 4, shape = 21, color = "black", fill = "white") + 
+  # panels
+  facet_wrap(~organism, ncol=2, scales = "free_y") + 
+  # scales
+  scale_fill_manual(values = cbPalette) +
+  scale_color_manual(values = cbPalette) +
+  scale_shape_manual(values = 21:25) +
+  scale_x_continuous(expand = c(0,0), breaks = (0:5)*0.2) + 
+  coord_cartesian(xlim = c(-0.1, 0.9)) +
+  # labels
+  labs(x = TeX("$pN_{2}$ \\[bar\\]"), y = "distance (# cells)") +
+  # theme
+  theme_figure(grid = FALSE, legend = FALSE, text_size = 20) 
+```
+
+## Comparison plot of density distributions across different growth conditions
+
+```{r SI_heterocysts_growth_phase_data, fig.width = 8, fig.height = 10}
+heterocyst_data %>% 
+  # select experiment with growth phase comparisons
+  filter(experiment == 4) %>% 
+  # add formatted pN2 label for paneling
+  mutate(pN2_formatted = sprintf("%0.1f bar", pN2)) %>% 
+  # define global plot aesthetics
+  ggplot(aes(x = n_cbh, y = ..density.., color = growth_phase, group = growth_phase)) +
+  # density curves
+  geom_density() +
+  # vertical lines for means
+  geom_vline(data = function(df) df %>% group_by(growth_phase, pN2_formatted) %>% 
+               summarize(n_cbh_mean = mean(n_cbh)),
+             map = aes(xintercept = n_cbh_mean, color = growth_phase), linetype = 2) +
+  # vertical lines for medians
+  geom_vline(data = function(df) df %>% group_by(growth_phase, pN2_formatted) %>% 
+               summarize(n_cbh_median = median(n_cbh)),
+             map = aes(xintercept = n_cbh_median, color = growth_phase), linetype = 3) +
+  # scales
+  scale_x_continuous(expand = c(0,0), lim = c(0,40)) +
+  scale_color_manual(values = cbPalette) +
+  # labels
+  labs(x = "distance (# cells)", y = "density", color = "Growth phase", fill = "Growth phase") + 
+  # grid
+  facet_grid(pN2_formatted~.) +
+  # theme
+  theme_figure(grid = FALSE, legend = TRUE, text_size = 20) 
+```
+
+
+
+# Bootstrapped heterocyst data
+
+## Bootstrap means and medians for the heterocyst data
+
+```{r}
+# bootstrap heterocyst data
+n_bootstrap <- 1000
+heterocyst_data_summary <- 
+  heterocyst_data %>% 
+  filter(growth_phase == "stationary") %>% 
+  nest(-organism, -pN2) %>% 
+  mutate(
+    # number of samples
+    n_samples = map_int(data, nrow),
+    # bootstrap means and medians
+    bootstrap = map(data, ~boot(data = .x$n_cbh, R = n_bootstrap,
+        statistic = function(x, idx) c(mean(x[idx]), median(x[idx])))),
+    # resulting bootstrapped means and standard errors
+    n_cbh_mean = map_dbl(bootstrap, ~.x$t0[1]),
+    n_cbh_mean_se = map_dbl(bootstrap, ~sd(.x$t[,1])),
+    n_cbh_median = map_dbl(bootstrap, ~.x$t0[2]),
+    n_cbh_median_se = map_dbl(bootstrap, ~sd(.x$t[,2]))
+  ) %>% 
+  arrange(organism, pN2)
+
+# export as data table for SI
+heterocyst_data_table <-
+  heterocyst_data_summary %>% 
+  mutate(
+    pN2 = table_round(pN2, n_decs = 1),
+    n_samples = table_round(n_samples, n_decs = 0),
+    n_cbh_mean = table_format_with_err(n_cbh_mean, n_cbh_mean_se, sig = 2, max = 2),
+    n_cbh_median = table_format_with_err(n_cbh_median, n_cbh_median_se, sig = 2, max = 2)
+  ) %>% 
+  select(organism, pN2, n_samples, n_cbh_mean, n_cbh_median)
+heterocyst_data_table %>% export_data_table("heterocyst_numbers.xlsx")
+
+# show data
+heterocyst_data_table %>% kable(d = 1)
+```
+
+## Evaluate differences between pN2 conditions
+
+Evalulate significant differences based on the bootstrapped means and directly using Wilcox Mann Whitney. 
+
+Result: both measures provide identical significance levels.
+
+```{r}
+heterocyst_differences <- 
+  heterocyst_data_summary %>% 
+  select(organism, pN2, data, bootstrap) %>% 
+  { full_join(rename(., pN2_a = pN2, data_a = data, bs_a = bootstrap),
+              rename(., pN2_b = pN2, data_b = data, bs_b = bootstrap), by = "organism") } %>% 
+  filter(pN2_a != pN2_b) %>% 
+  mutate(
+    # boostrapped difference in mean and standard error of the difference
+    bs_diff = map2(bs_a, bs_b, function(a, b) a$t[,1] - b$t[,1]),
+    n_cbh_mean_diff = map_dbl(bs_diff, ~mean(.x)),
+    n_cbh_mean_diff_se = map_dbl(bs_diff, ~sd(.x)),
+    # is this difference in mean statistically significant?
+    # evaluate by calculating the p-value for H0: bootstrapped difference in means == 0 
+    # --> first calcualte the t statistic for H0, then evaluate the p value based on the t distribution
+    t_pval = ((n_cbh_mean_diff - 0)/n_cbh_mean_diff_se) %>% { 2*pt(-abs(.), df = length(bs_diff) - 1) },
+    t_signif = t_pval %>% { ifelse( . < 0.001, "***", ifelse(. < 0.01, "**", ifelse(. < 0.05, "*", "-"))) },
+    # alternatively: evaluate difference in original distribution using Wilcox Mann Whitney test
+    wilcox_pval = map2_dbl(data_a, data_b, function(a, b) wilcox.test(a$n_cbh, b$n_cbh)$p.value),
+    wilcox_signif = wilcox_pval %>% { ifelse( . < 0.001, "***", ifelse(. < 0.01, "**", ifelse(. < 0.05, "*", "-"))) }
+  ) %>% 
+  select(-starts_with("data"), -bs_diff, -bs_a, -bs_b) %>% 
+  arrange(organism, pN2_a, pN2_b)
+
+# list significance levels for both bootstrapped and WMW test
+heterocyst_differences %>% 
+  select(organism, pN2_a, pN2_b, t_signif, wilcox_signif) %>% 
+  kable()
+
+# export as data table for SI
+heterocyst_differences_table <-
+  heterocyst_differences %>% 
+   mutate(
+    pN2_a = table_round(pN2_a, n_decs = 1),
+    pN2_b = table_round(pN2_b, n_decs = 1),
+    value = table_format_with_err(n_cbh_mean_diff, n_cbh_mean_diff_se, sig = 2, max = 2) %>% paste0(" (", t_signif, ")")
+  ) %>% 
+  select(organism, pN2_a, pN2_b, value) %>% 
+  spread(pN2_a, value) %>% rename(` ` = pN2_b)  
+heterocyst_differences_table %>% export_data_table("heterocyst_comparison.xlsx")
+
+# show data
+heterocyst_differences_table %>% kable(d=2)
+```
+
+
+## Visualize means and standard deviations 
+
+```{r figure_heterocysts, fig.width = 10, fig.height = 5}
+heterocyst_data_summary %>% 
+  ggplot(aes(x = pN2)) + 
+  # bootstrap standard errors (1 sigma)
+  geom_errorbar(map = aes(ymin = n_cbh_mean - n_cbh_mean_se, ymax = n_cbh_mean + n_cbh_mean_se), color = "black", width = 0.05, size = 1) + 
+  # means
+  geom_point(map = aes(y = n_cbh_mean), size = 4, shape = 21, color = "black", fill = "gray") + 
+  # organism panels
+  facet_wrap(~organism, ncol=2) + 
+  # scales
+  scale_x_continuous(expand = c(0,0), breaks = (0:5)*0.2) +
+  scale_y_continuous(breaks = (0:10)*5) + 
+  coord_cartesian(xlim = c(-0.1, 0.9)) +
+  # labels
+  labs(x = TeX("$pN_{2}$ \\[bar\\]"), y = "distance (# cells)") +
+  # theme
+  theme_figure(grid = FALSE, legend = FALSE, text_size = 20) 
+```
+
+# Enzyme kinetics interpretation
+
+## Load additional data
+
+```{r}
+isotope_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_data.xlsx"))
+isotope_model <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_model.xlsx"))
+growth_rate_data <- read_excel(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
+```
+
+## Calculate michaelis menten fit
+
+```{r}
+mm_model <- 
+  # combine all the information
+  heterocyst_data_summary %>% 
+  filter(organism == "A. cylindrica") %>% 
+  left_join(growth_rate_data, by = c("pN2", "organism")) %>% 
+  left_join(calculate_eps_avgs(isotope_data), by = c("pN2", "organism")) %>% 
+  left_join(isotope_model, by = "organism") %>% 
+  # run model
+  nest(-organism) %>% 
+  mutate(
+    # use nonlinear least squares fit to find Km
+    model = map(data, ~nls(
+      n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_avg + pN2) + 0, 
+      data = na.omit(.x), start = list(Km.bar = 0.5), algorithm = "plinear")),
+    coefficients = map(model, tidy),
+    Km.bar = map_dbl(coefficients, ~filter(.x, term == "Km.bar")$estimate),
+    Km_se.bar = map_dbl(coefficients, ~filter(.x, term == "Km.bar")$std.error)
+  ) 
+
+# print result of the fit
+mm_model %>% select(organism, Km.bar, Km_se.bar) %>% kable(d=3)
+```
