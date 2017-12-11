@@ -6,3 +6,5 @@
 figures/*
 *_cache/*
 ~$*
+*.html
+!docs/*.html
