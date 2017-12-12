@@ -1,0 +1,179 @@
+---
+title: "Analysis: Isotope Fractionation"
+author: "Silverman et al."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/isotope_analysis.Rmd)"
+editor_options:
+  chunk_output_type: inline
+---
+
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(readxl) # reading excel file
+library(openxlsx) # writing excel file
+library(knitr) # generating reports
+library(latex2exp) # for latex plot labels
+library(boot) # bootstrap sample means and key calculations
+library(broom) # efficient retrieval of model parameters
+source(file.path("lib", "functions.R"))
+opts_chunk$set(
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2017_Silverman_et_al-"))
+```
+
+# Load Data
+
+```{r}
+isotope_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_data.xlsx"))
+growth_rate_data <- read_excel(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
+heterocyst_data_summary <- read_excel(file.path("data", "2017_Silverman_et_al-heterocyst_data_summary.xlsx"))
+```
+
+# Isotope data
+
+## SI plot with epsilons from all biological replicates
+
+```{r SI_all_epsilons, fig.width = 8, fig.height = 6, warning=FALSE}
+isotope_data %>% 
+  # overall plot aesthetics
+  ggplot(aes(x = pN2, shape = organism, fill = organism, y = eps)) + 
+  # all data points
+  geom_point(map = aes(y = eps), alpha = 0.4, size = 3, color = "black") + 
+  # averages
+  geom_point(data = function(df) group_by(df, organism, pN2) %>% summarize(eps = mean(eps)), color = "black", size = 6) +
+  # scales
+  scale_shape_manual("Species", values = c(21:26)) +
+  scale_fill_manual("Species", values = cbPalette) +
+  # labels
+  labs(y = TeX("$\\epsilon^{15}N_{Norg/N2}$ \\[\U2030\\]"), x = TeX("$pN_{2}$ \\[bar\\]")) + 
+  # theme
+  theme_figure() +
+  theme(legend.position = c(0.825, 0.830), legend.background = element_rect(size = 0.8, color = "black"))
+```
+
+## Main plot with bootstrapped means and SE
+
+```{r}
+n_bootstrap <- 1000
+isotope_data_summary <- isotope_data %>% 
+  nest(-organism, -pN2) %>% 
+  mutate(
+    # bootstrap mean and standard error of the mean
+    bootstrap = map(data, ~boot(data = .x$eps, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)),
+    eps_mean = map_dbl(bootstrap, ~mean(.x$t)),
+    eps_mean_se = map_dbl(bootstrap, ~sd(.x$t))
+  )
+
+# save data summary and print overview
+isotope_data_summary %>% select(-data, -bootstrap) %>%
+  write.xlsx(file.path("data", "2017_Silverman_et_al-isotope_data_summary.xlsx"))
+isotope_data_summary %>% select(-data, -bootstrap) %>% kable(d=3)
+```
+
+
+```{r figure_epsilons, fig.width = 8, fig.height = 6, warning=FALSE}
+isotope_data_summary %>% 
+  # overall plot aesthetics
+  ggplot(aes(x = pN2, shape = organism)) + 
+  # 1 S.E. error bars for the bootstrapped means
+  geom_errorbar(map = aes(y = eps_mean, ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 0.02, alpha = 0.5) +
+  # bootstrapped means
+  geom_point(map = aes(y = eps_mean), fill = "#999999", color = "black", size = 6) +
+  # scales
+  scale_shape_manual("Species", values = c(21:26)) +
+  # labels
+  labs(y = TeX("$\\epsilon^{15}N_{Norg/N2}$ \\[\U2030\\]"), x = TeX("$pN_{2}$ \\[bar\\]")) + 
+  # theme
+  theme_figure() +
+  theme(legend.position = c(0.815, 0.86), legend.background = element_rect(size = 0.8, color = "black"))
+```
+
+# Isotope model
+
+## Calculate regression parameters
+
+```{r}
+# model data
+model_data <- 
+  isotope_data_summary %>% 
+  filter(organism == "A. cylindrica") %>% 
+  unnest(data) %>% 
+  left_join(growth_rate_data, by = c("pN2", "organism")) %>% 
+  left_join(heterocyst_data_summary, by = c("pN2", "organism")) %>% 
+  mutate(
+    # calculate the combination of dependent variables for the regression
+    x = growth_rate.day * n_cbh_mean / pN2,
+    # standard error propagation for plotting x errorbars (assuming pN2 error to be minimal)
+    x_se = abs(x) * sqrt((growth_rate_se.day/growth_rate.day)^2 + (n_cbh_mean_se/n_cbh_mean)^2)
+  )
+
+# bootstrap model
+model <-
+  model_data %>% 
+  nest(-organism) %>% 
+  mutate(
+    # bootstrap slope from regression model
+    bootstrap = map(data, ~boot(data = .x, R = n_bootstrap,
+      statistic = function (data, idx) {
+        # model fit for resampled data
+        m <- lm(eps ~ x, data = data[idx, ])
+        r2 <- glance(m)$r.squared
+        intercept <- tidy(m)$estimate[1]
+        return(c(intercept, r2))
+      })),
+    eps_fix = map_dbl(bootstrap, ~mean(.x$t[,1])),
+    eps_fix_se = map_dbl(bootstrap, ~sd(.x$t[,1])),
+    r2 = map_dbl(bootstrap, ~mean(.x$t[,2]))
+  ) %>% select(-bootstrap)
+
+# save and display
+model %>% select(-data) %>% write.xlsx(file.path("data", "2017_Silverman_et_al-isotope_model.xlsx"))
+model %>% select(-data) %>% kable(d=3)
+```
+
+## Visualize isotope model
+
+```{r figure_isotope_model, fig.width = 6, fig.height = 6, warning=FALSE}
+model %>% 
+  # unnest 
+  unnest(data) %>% 
+  # select averages for plotting
+  select(x, x_se, eps_mean, eps_mean_se, eps_fix, eps_fix_se) %>% unique() %>% 
+  ggplot(aes(x = x, y = eps_mean)) +
+  # linear fit
+  geom_smooth(method = "lm", map = aes(color = NULL), color = "black", se = FALSE, fullrange = TRUE, alpha=0.3) +
+  # intercept (eps fix)
+  geom_hline(data = function(df) select(df, eps_fix) %>% unique(), 
+             map = aes(yintercept = eps_fix), linetype = 2) +
+  geom_text(data = function(df) select(df, eps_fix, eps_fix_se) %>% unique(), 
+            map = aes(x = 62, y = eps_fix, 
+                      label = sprintf("$\\epsilon_{fix} = %.3f \\pm %.3f\U2030$", eps_fix, eps_fix_se) %>% 
+                        TeX() %>% as.character()),
+            parse = TRUE, hjust = 1.05, vjust = -0.2, size = 7) +
+  # 1 sigma error bars for averages
+  geom_errorbarh(map = aes(x = NULL, y = eps_mean, xmin = x - x_se, xmax = x + x_se), height = 0.03, alpha = 0.8) +
+  geom_errorbar(map = aes(y = NULL, ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 1, alpha = 0.8) +
+  # data points for average
+  geom_point(shape = 21, fill = "#999999", color = "black", size = 5) + 
+  # scales
+  scale_x_continuous(expand = c(0, 0), breaks = (0:6)*10) + expand_limits(x=0) + 
+  scale_y_continuous(breaks = c(0:20)*-0.2) + 
+  coord_cartesian(x = c(0,62), y = c(-1.6, -2.9)) +
+  # labels
+  labs(y = TeX("$\\epsilon^{15}N_{Norg/N2}$ \\[\U2030\\]"), 
+       x = TeX("$\\frac{\\mu \\cdot n_{cbh}}{pN_2}\\,\\left[\\frac{cells}{day\\cdot bar}\\right]$")) + 
+  # theme
+  theme_figure(legend = FALSE, grid = TRUE)
+```
+
+
