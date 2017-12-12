@@ -16,7 +16,7 @@ editor_options:
 
 # - [Growth Curves](growth_curves_analysis.html)
 
-# - [Heterocyst Spacing](heterocyst_curves_analysis.html)
+# - [Heterocyst Spacing](heterocyst_analysis.html)
 
 # - [Isotope Fractionation](isotope_analysis.html)
 
