@@ -4,6 +4,7 @@
 .Ruserdata
 *.Rproj
 figures/*
+tables/*
 *_cache/*
 ~$*
 *.html
