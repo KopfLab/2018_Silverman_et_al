@@ -145,7 +145,7 @@ growth_rates %>%
   aes(pN2, growth_rate.day, color = organism, shape = organism) +
   geom_errorbar(aes(ymin = growth_rate.day - growth_rate_se.day, ymax = growth_rate.day + growth_rate_se.day), width = 0) +
   geom_point(size = 5) +
-  scale_color_brewer("Species", palette = "Set1") +
+  scale_color_manual("Species", values = cbPalette) +
   scale_shape_manual("Species", values = c(16, 15)) + 
   labs(y = "growth rate [1/day]", x = TeX("$pN_{2}$ \\[bar\\]")) +
   theme_figure() 
