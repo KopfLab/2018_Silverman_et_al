@@ -33,33 +33,6 @@ theme_figure <- function(legend = TRUE, grid = TRUE, text_size = 20, axis_text_s
 
 # functions to simplify plotting ====
 
-# calculate average isotope values
-calculate_eps_avgs <- function(df) {
-  group_by(df, organism, pN2) %>%
-    summarize(
-      eps_avg = mean(eps),
-      eps_sd = sd(eps)
-    )
-}
-
-# calculate average isotope values for model
-calculate_eps_model_avgs <- function(df) {
-  group_by(df, organism, x, x_sd) %>%
-    summarize(
-      eps_avg = mean(eps),
-      eps_sd = sd(eps)
-    )
-}
-
-# calculate average # cells between heterocysts (cbh)
-calculate_cbh_avgs <- function(x) { 
-  group_by(x, organism, pN2) %>% 
-    summarize(
-      n_cbh.avg = mean(n_cbh),
-      n_cbh.sd = sd(n_cbh)
-    )        
-}
-
 
 # functions for data tables ====
 
