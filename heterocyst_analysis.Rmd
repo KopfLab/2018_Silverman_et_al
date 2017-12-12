@@ -38,7 +38,7 @@ heterocyst_data <- read_excel(file.path("data", "2017_Silverman_et_al-heterocyst
 
 # All heterocyst data
 
-## Summary plot with all stationary phase data points
+## SI plot with all stationary phase data points
 
 ```{r SI_heterocysts_all_data, fig.width = 10, fig.height = 5}
 heterocyst_data %>% 
@@ -51,7 +51,8 @@ heterocyst_data %>%
   # box plot
   geom_boxplot(map = aes(y = n_cbh), alpha = 0.5, color = "black", width=0.1, outlier.alpha = 0, coef = 0) + 
   # averages
-  geom_point(data = calculate_cbh_avgs, map = aes(y = n_cbh.avg), size = 4, shape = 21, color = "black", fill = "white") + 
+  geom_point(data = function(df) group_by(df, organism, pN2) %>% summarize(n_cbh.avg = mean(n_cbh)), 
+             map = aes(y = n_cbh.avg), size = 4, shape = 21, color = "black", fill = "white") + 
   # panels
   facet_wrap(~organism, ncol=2, scales = "free_y") + 
   # scales
@@ -66,7 +67,7 @@ heterocyst_data %>%
   theme_figure(grid = FALSE, legend = FALSE, text_size = 20) 
 ```
 
-## Comparison plot of density distributions across different growth conditions
+## SI comparison plot of density distributions across different growth conditions
 
 ```{r SI_heterocysts_growth_phase_data, fig.width = 8, fig.height = 10}
 heterocyst_data %>% 
@@ -192,7 +193,7 @@ heterocyst_differences_table %>% kable(d=2)
 ```
 
 
-## Visualize means and standard deviations 
+## Main plot visualizing means and standard deviations 
 
 ```{r figure_heterocysts, fig.width = 10, fig.height = 5}
 heterocyst_data_summary %>% 
@@ -218,7 +219,7 @@ heterocyst_data_summary %>%
 ## Load additional data
 
 ```{r}
-isotope_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_data.xlsx"))
+isotope_data_summary <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_data_summary.xlsx"))
 isotope_model <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_model.xlsx"))
 growth_rate_data <- read_excel(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
 ```
@@ -231,20 +232,38 @@ mm_model <-
   heterocyst_data_summary %>% 
   filter(organism == "A. cylindrica") %>% 
   left_join(growth_rate_data, by = c("pN2", "organism")) %>% 
-  left_join(calculate_eps_avgs(isotope_data), by = c("pN2", "organism")) %>% 
+  left_join(isotope_data_summary, by = c("pN2", "organism")) %>% 
   left_join(isotope_model, by = "organism") %>% 
   # run model
   nest(-organism) %>% 
   mutate(
-    # use nonlinear least squares fit to find Km
-    model = map(data, ~nls(
-      n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_avg + pN2) + 0, 
-      data = na.omit(.x), start = list(Km.bar = 0.5), algorithm = "plinear")),
-    coefficients = map(model, tidy),
-    Km.bar = map_dbl(coefficients, ~filter(.x, term == "Km.bar")$estimate),
-    Km_se.bar = map_dbl(coefficients, ~filter(.x, term == "Km.bar")$std.error)
+    # bootstrap Km using nonlinear least squares fit to find Km
+    data = map(data, na.omit),
+    bootstrap = map(data, ~boot(data = .x, R = n_bootstrap,
+      statistic = function (data, idx) {
+        if (all(data[idx,]$pN2 == data[idx,]$pN2[1])) {
+          return(NaN) # identical resamples, can't fit a model
+        }
+        
+        # model fit for resampled data
+        safe_nls <- safely(nls)
+        m <- safe_nls(
+          n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_mean + pN2) + 0, 
+          data = data[idx,], start = list(Km.bar = 0.5), algorithm = "plinear")
+        
+        # return value
+        if (is.null(m$error)) {
+          return(filter(tidy(m$result), term == "Km.bar")$estimate)
+        } else {
+          return(NaN) # nls did not converge
+        }
+      })),
+    bootstrap_data = map(bootstrap, ~.x$t[!is.nan(.x$t[,1]), 1]),
+    n_converged = map_dbl(bootstrap_data, length),
+    Km.bar = map_dbl(bootstrap_data, mean),
+    Km_se.bar = map_dbl(bootstrap_data, sd)
   ) 
 
 # print result of the fit
-mm_model %>% select(organism, Km.bar, Km_se.bar) %>% kable(d=3)
+mm_model %>% select(organism, n_converged, Km.bar, Km_se.bar) %>% kable(d=3)
 ```
