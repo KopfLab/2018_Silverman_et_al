@@ -277,72 +277,84 @@ isotope_data_summary &lt;- isotope_data %&gt;%
   nest(-organism, -pN2) %&gt;% 
   mutate(
     # bootstrap mean and standard error of the mean
+    n_bio_reps = map_int(data, nrow),
     bootstrap = map(data, ~boot(data = .x$eps, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)),
     eps_mean = map_dbl(bootstrap, ~mean(.x$t)),
     eps_mean_se = map_dbl(bootstrap, ~sd(.x$t))
   )
 
-# save data summary and print overview
+# save data summary and data table
 isotope_data_summary %&gt;% select(-data, -bootstrap) %&gt;%
   write.xlsx(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_data_summary.xlsx&quot;))
-isotope_data_summary %&gt;% select(-data, -bootstrap) %&gt;% kable(d=3)</code></pre>
+
+isotope_data_table &lt;-
+  isotope_data_summary %&gt;% 
+  mutate(
+    pN2 = table_round(pN2, n_decs = 1),
+    n_bio_reps = table_round(n_bio_reps, n_decs = 0),
+    eps_mean = table_format_with_err(eps_mean, eps_mean_se, sig = 2, max = 2)
+  ) %&gt;% 
+  select(organism, pN2, n_bio_reps, eps_mean)
+isotope_data_table %&gt;% export_data_table(&quot;isotope_numbers.xlsx&quot;)
+
+isotope_data_table %&gt;%  kable(d=3)</code></pre>
 <table>
 <thead>
 <tr class="header">
 <th align="left">organism</th>
-<th align="right">pN2</th>
-<th align="right">eps_mean</th>
-<th align="right">eps_mean_se</th>
+<th align="left">pN2</th>
+<th align="left">n_bio_reps</th>
+<th align="left">eps_mean</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">A. cylindrica</td>
-<td align="right">0.1</td>
-<td align="right">-1.858</td>
-<td align="right">0.026</td>
+<td align="left">0.1</td>
+<td align="left">4</td>
+<td align="left">-1.86 ± 0.03</td>
 </tr>
 <tr class="even">
 <td align="left">A. cylindrica</td>
-<td align="right">0.3</td>
-<td align="right">-2.055</td>
-<td align="right">0.073</td>
+<td align="left">0.3</td>
+<td align="left">4</td>
+<td align="left">-2.06 ± 0.07</td>
 </tr>
 <tr class="odd">
 <td align="left">A. cylindrica</td>
-<td align="right">0.5</td>
-<td align="right">-2.257</td>
-<td align="right">0.027</td>
+<td align="left">0.5</td>
+<td align="left">4</td>
+<td align="left">-2.26 ± 0.03</td>
 </tr>
 <tr class="even">
 <td align="left">A. cylindrica</td>
-<td align="right">0.8</td>
-<td align="right">-2.449</td>
-<td align="right">0.013</td>
+<td align="left">0.8</td>
+<td align="left">4</td>
+<td align="left">-2.45 ± 0.01</td>
 </tr>
 <tr class="odd">
 <td align="left">A. variabilis</td>
-<td align="right">0.1</td>
-<td align="right">-2.199</td>
-<td align="right">0.001</td>
+<td align="left">0.1</td>
+<td align="left">2</td>
+<td align="left">-2.20 ± 0.00</td>
 </tr>
 <tr class="even">
 <td align="left">A. variabilis</td>
-<td align="right">0.3</td>
-<td align="right">-2.302</td>
-<td align="right">0.019</td>
+<td align="left">0.3</td>
+<td align="left">3</td>
+<td align="left">-2.30 ± 0.02</td>
 </tr>
 <tr class="odd">
 <td align="left">A. variabilis</td>
-<td align="right">0.5</td>
-<td align="right">-2.379</td>
-<td align="right">0.039</td>
+<td align="left">0.5</td>
+<td align="left">3</td>
+<td align="left">-2.38 ± 0.04</td>
 </tr>
 <tr class="even">
 <td align="left">A. variabilis</td>
-<td align="right">0.8</td>
-<td align="right">-2.465</td>
-<td align="right">0.030</td>
+<td align="left">0.8</td>
+<td align="left">3</td>
+<td align="left">-2.46 ± 0.03</td>
 </tr>
 </tbody>
 </table>

@@ -69,15 +69,27 @@ isotope_data_summary <- isotope_data %>%
   nest(-organism, -pN2) %>% 
   mutate(
     # bootstrap mean and standard error of the mean
+    n_bio_reps = map_int(data, nrow),
     bootstrap = map(data, ~boot(data = .x$eps, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)),
     eps_mean = map_dbl(bootstrap, ~mean(.x$t)),
     eps_mean_se = map_dbl(bootstrap, ~sd(.x$t))
   )
 
-# save data summary and print overview
+# save data summary and data table
 isotope_data_summary %>% select(-data, -bootstrap) %>%
   write.xlsx(file.path("data", "2017_Silverman_et_al-isotope_data_summary.xlsx"))
-isotope_data_summary %>% select(-data, -bootstrap) %>% kable(d=3)
+
+isotope_data_table <-
+  isotope_data_summary %>% 
+  mutate(
+    pN2 = table_round(pN2, n_decs = 1),
+    n_bio_reps = table_round(n_bio_reps, n_decs = 0),
+    eps_mean = table_format_with_err(eps_mean, eps_mean_se, sig = 2, max = 2)
+  ) %>% 
+  select(organism, pN2, n_bio_reps, eps_mean)
+isotope_data_table %>% export_data_table("isotope_numbers.xlsx")
+
+isotope_data_table %>%  kable(d=3)
 ```
 
 
