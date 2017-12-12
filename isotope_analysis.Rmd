@@ -173,8 +173,8 @@ model %>%
                         TeX() %>% as.character()),
             parse = TRUE, hjust = 1.05, vjust = -0.2, size = 7) +
   # 1 sigma error bars for averages
-  geom_errorbarh(map = aes(x = NULL, y = eps_mean, xmin = x - x_se, xmax = x + x_se), height = 0.03, alpha = 0.8) +
-  geom_errorbar(map = aes(y = NULL, ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 1, alpha = 0.8) +
+  geom_errorbarh(map = aes(y = eps_mean, xmin = x - x_se, xmax = x + x_se), height = 0.03, alpha = 0.8) +
+  geom_errorbar(map = aes(ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 1, alpha = 0.8) +
   # data points for average
   geom_point(shape = 21, fill = "#999999", color = "black", size = 5) + 
   # scales
