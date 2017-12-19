@@ -250,20 +250,54 @@ mm_model <-
         m <- safe_nls(
           n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_mean + pN2) + 0, 
           data = data[idx,], start = list(Km.bar = 0.5), algorithm = "plinear")
+        coefs <- tidy(m$result)
         
         # return value
         if (is.null(m$error)) {
-          return(filter(tidy(m$result), term == "Km.bar")$estimate)
+          return(c(filter(coefs, term == "Km.bar")$estimate, filter(coefs, term == ".lin")$estimate))
         } else {
-          return(NaN) # nls did not converge
+          return(c(NaN, NaN)) # nls did not converge
         }
       })),
-    bootstrap_data = map(bootstrap, ~.x$t[!is.nan(.x$t[,1]), 1]),
-    n_converged = map_dbl(bootstrap_data, length),
-    Km.bar = map_dbl(bootstrap_data, mean),
-    Km_se.bar = map_dbl(bootstrap_data, sd)
+    bootstrap_data = map(bootstrap, ~.x$t[!is.nan(.x$t[,1]), ]),
+    n_converged = map_dbl(bootstrap_data, nrow),
+    Km.bar = map_dbl(bootstrap_data, ~mean(.x[,1])),
+    Km_se.bar = map_dbl(bootstrap_data, ~sd(.x[,1])),
+    slope = map_dbl(bootstrap_data, ~mean(.x[,2]))
   ) 
 
 # print result of the fit
 mm_model %>% select(organism, n_converged, Km.bar, Km_se.bar) %>% kable(d=3)
 ```
+## Visualize half-saturation constant
+
+```{r SI_enzyme_kinetics_model, fig.width = 6, fig.height = 5}
+mm_model %>% 
+  # add predictions
+  mutate(
+    data = pmap(list(data = data, Km.bar = Km.bar, slope = slope), 
+                function(data, Km.bar, slope) mutate(data, n_cbh_pred = slope*pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_mean + pN2)))
+  ) %>% 
+  unnest(data) %>% 
+  ggplot(aes(x = pN2)) + 
+  # Km estimate
+  geom_rect(map = aes(xmin = Km.bar - Km_se.bar, xmax = Km.bar + Km_se.bar, ymin = -Inf, ymax = Inf), fill = "light grey") + 
+  geom_vline(map = aes(xintercept = Km.bar), linetype = 2) +
+  # model predictions
+  geom_smooth(method = "loess", span = 1, se = FALSE, map = aes(y = n_cbh_pred), color = cbPalette[5]) +
+  geom_point(map = aes(y = n_cbh_pred), size = 5, shape = 23, color = "black", fill = cbPalette[5]) +
+  # original data
+  geom_point(map = aes(y = n_cbh_mean), size = 4, shape = 21, color = "black", fill = "gray") + 
+  # organism panels
+  facet_wrap(~organism, ncol=2) + 
+  # scales
+  scale_x_continuous(expand = c(0,0), breaks = (0:5)*0.2) +
+  scale_y_continuous(breaks = (0:10)*5) + 
+  coord_cartesian(xlim = c(-0.1, 0.9)) +
+  # labels
+  labs(x = TeX("$pN_{2}$ \\[bar\\]"), y = "distance (# cells)") +
+  # theme
+  theme_figure(grid = FALSE, legend = FALSE, text_size = 20) 
+```
+
+
