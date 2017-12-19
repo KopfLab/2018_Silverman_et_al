@@ -269,6 +269,7 @@ mm_model <-
 # print result of the fit
 mm_model %>% select(organism, n_converged, Km.bar, Km_se.bar) %>% kable(d=3)
 ```
+
 ## Visualize half-saturation constant
 
 ```{r SI_enzyme_kinetics_model, fig.width = 6, fig.height = 5}

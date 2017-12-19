@@ -963,14 +963,11 @@ mm_model %&gt;% select(organism, n_converged, Km.bar, Km_se.bar) %&gt;% kable(d=
 <td align="right">0.173</td>
 <td align="right">0.014</td>
 </tr>
-<tr class="even">
-<td align="left">## Visualize hal</td>
-<td align="right">f-saturation c</td>
-<td align="right">onstant</td>
-<td align="right"></td>
-</tr>
 </tbody>
 </table>
+</div>
+<div id="visualize-half-saturation-constant" class="section level2">
+<h2><span class="header-section-number">4.3</span> Visualize half-saturation constant</h2>
 <pre class="r"><code>mm_model %&gt;% 
   # add predictions
   mutate(
