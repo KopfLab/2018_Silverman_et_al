@@ -47,13 +47,15 @@ heterocyst_data_summary <- read_excel(file.path("data", "2017_Silverman_et_al-he
 isotope_data %>% 
   # overall plot aesthetics
   ggplot(aes(x = pN2, shape = organism, fill = organism, y = eps)) + 
-  # all data points
+  # all data points with analytical error
+  geom_errorbar(map = aes(ymin = eps - eps_sigma_analytical, ymax = eps + eps_sigma_analytical, color = organism), width = 0.01, alpha = 0.4) +
   geom_point(map = aes(y = eps), alpha = 0.4, size = 3, color = "black") + 
   # averages
   geom_point(data = function(df) group_by(df, organism, pN2) %>% summarize(eps = mean(eps)), color = "black", size = 6) +
   # scales
   scale_shape_manual("Species", values = c(21:26)) +
   scale_fill_manual("Species", values = cbPalette) +
+  scale_color_manual("Species", values = cbPalette) +
   # labels
   labs(y = TeX("$\\epsilon^{15}N_{Norg/N2}$ \\[\U2030\\]"), x = TeX("$pN_{2}$ \\[bar\\]")) + 
   # theme
@@ -61,13 +63,15 @@ isotope_data %>%
   theme(legend.position = c(0.825, 0.830), legend.background = element_rect(size = 0.8, color = "black"))
 ```
 
-## Main plot with bootstrapped means and SE
+## Main plot with bootstrapped means
 
 ```{r}
 n_bootstrap <- 1000
 isotope_data_summary <- isotope_data %>% 
   nest(-organism, -pN2) %>% 
   mutate(
+    # analytical precision
+    sigma_analytical = map_dbl(data, ~mean(.x$eps_sigma_analytical)),
     # bootstrap mean and standard error of the mean
     n_bio_reps = map_int(data, nrow),
     bootstrap = map(data, ~boot(data = .x$eps, statistic = function(x, idx) mean(x[idx]), R = n_bootstrap)),
@@ -84,9 +88,10 @@ isotope_data_table <-
   mutate(
     pN2 = table_round(pN2, n_decs = 1),
     n_bio_reps = table_round(n_bio_reps, n_decs = 0),
-    eps_mean = table_format_with_err(eps_mean, eps_mean_se, sig = 2, max = 2)
+    eps_mean = table_format_with_err(eps_mean, eps_mean_se, sig = 2, max = 2),
+    sigma_analytical = table_format_err(sigma_analytical, sig = 1)
   ) %>% 
-  select(organism, pN2, n_bio_reps, eps_mean)
+  select(organism, pN2, n_bio_reps, eps_mean, sigma_analytical)
 isotope_data_table %>% export_data_table("isotope_numbers.xlsx")
 
 isotope_data_table %>%  kable(d=3)
@@ -97,8 +102,10 @@ isotope_data_table %>%  kable(d=3)
 isotope_data_summary %>% 
   # overall plot aesthetics
   ggplot(aes(x = pN2, shape = organism)) + 
-  # 1 S.E. error bars for the bootstrapped means
-  geom_errorbar(map = aes(y = eps_mean, ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 0.02, alpha = 0.5) +
+  # 1 sigma error bars for the analytical precision
+  geom_errorbar(map = aes(y = eps_mean, ymin = eps_mean - sigma_analytical, ymax = eps_mean + sigma_analytical), width = 0, linetype = 4) +
+  # 1 S.E. error bars of the bootstrapped biological means
+  geom_errorbar(map = aes(y = eps_mean, ymin = eps_mean - eps_mean_se, ymax = eps_mean + eps_mean_se), width = 0.02) +
   # bootstrapped means
   geom_point(map = aes(y = eps_mean), fill = "#999999", color = "black", size = 6) +
   # scales

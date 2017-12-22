@@ -80,6 +80,14 @@ table_format_with_err <- function(x, err, sig_digits, max_sig_digits = NULL) {
   sprintf("%%.%df ± %%.%df", n_decs, n_decs) %>% sprintf(round(x, n_decs), round(err, n_decs))
 }
 
+# format error alone
+table_format_err <- function(err, sig_digits, max_sig_digits = NULL) {
+  n_decs <- get_n_decimals(err, sig_digits)
+  if (!is.null(max_sig_digits))
+    n_decs <- ifelse(n_decs > max_sig_digits, max_sig_digits, n_decs)
+  sprintf("± %%.%df", n_decs) %>% sprintf(round(err, n_decs))
+}
+
 # round to a specific number of digits
 table_round <- function(x, n_decs) {
   sprintf("%%.%df", n_decs) %>% sprintf(round(x, n_decs))
