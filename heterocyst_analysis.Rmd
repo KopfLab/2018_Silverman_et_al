@@ -248,7 +248,7 @@ mm_model <-
         # model fit for resampled data
         safe_nls <- safely(nls)
         m <- safe_nls(
-          n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_mean + pN2) + 0, 
+          n_cbh_mean ~ pN2/growth_rate.day * 1/(Km.bar * eps_fix / (eps_aq_gas - eps_mean) + pN2) + 0, 
           data = data[idx,], start = list(Km.bar = 0.5), algorithm = "plinear")
         coefs <- tidy(m$result)
         
@@ -277,7 +277,7 @@ mm_model %>%
   # add predictions
   mutate(
     data = pmap(list(data = data, Km.bar = Km.bar, slope = slope), 
-                function(data, Km.bar, slope) mutate(data, n_cbh_pred = slope*pN2/growth_rate.day * 1/(Km.bar * eps_fix / eps_mean + pN2)))
+                function(data, Km.bar, slope) mutate(data, n_cbh_pred = slope*pN2/growth_rate.day * 1/(Km.bar * eps_fix / (eps_aq_gas - eps_mean) + pN2)))
   ) %>% 
   unnest(data) %>% 
   ggplot(aes(x = pN2)) + 
