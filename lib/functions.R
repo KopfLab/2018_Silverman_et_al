@@ -13,7 +13,7 @@ theme_figure <- function(legend = TRUE, grid = TRUE, text_size = 20, axis_text_s
           plot.background = element_blank(), panel.background = element_blank(),
           panel.border = element_rect(color="black", size=1), 
           strip.background = element_rect(color="black", linetype = 1),
-          plot.margin = unit(c(0, 0, 0, 0), "cm")
+          plot.margin = unit(c(0.1, 0.3, 0.1, 0.1), "cm")
     )
   # adjust grid
   if(!grid)
