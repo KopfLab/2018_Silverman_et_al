@@ -119,13 +119,14 @@ isotope_data_summary %>%
 
 # Isotope model
 
-## Determine aqueous/gas fractionation
+## Calculate relevant aqueous/gas fractionation
 
 ```{r SI_gas_aq_equilibrium, fig.width = 8, fig.height = 6, warning=FALSE}
 # literature data
-eq_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_literature_data.xlsx"), sheet = "gas liquid equilibrium")
+eq_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_literature_data.xlsx"), 
+                      sheet = "gas liquid equilibrium")
 
-# calculate regression parameters
+# calculate regression parameters and estimate eps aq/gas at exp. temperature
 eq_regression <- eq_data %>% 
   nest() %>%
   mutate(
@@ -133,7 +134,7 @@ eq_regression <- eq_data %>%
     bootstrap = map(data, ~boot(data = .x, R = n_bootstrap,
       statistic = function (x, idx) {
         # model fit for resampled data
-        m <- lm(eps_aq_gas.permil ~ T.C, data = x[idx,])
+        m <- lm(eps_aq_gas ~ T.C, data = x[idx,])
         intercept <- tidy(m)$estimate[1]
         slope <- tidy(m)$estimate[2]
         return(c(intercept, slope))
@@ -146,8 +147,8 @@ eq_regression <- eq_data %>%
   # calculate at experimental temperature
   mutate(
     T.C = 27,
-    eps_aq_gas.permil = intercept + T.C * slope,
-    eps_aq_gas_se.permil = sqrt(intercept_se^2 + (T.C*slope_se)^2)
+    eps_aq_gas = intercept + T.C * slope,
+    eps_aq_gas_se = sqrt(intercept_se^2 + (T.C*slope_se)^2)
   )
 
 # display
@@ -155,14 +156,14 @@ eq_regression %>% select(-data, -bootstrap) %>% kable(d=4)
 
 # visualize data
 eq_data %>% 
-  ggplot(aes(x = T.C, y = eps_aq_gas.permil, color = source)) +
+  ggplot(aes(x = T.C, y = eps_aq_gas, color = source)) +
   # linear fit
   geom_smooth(method = "lm", map = aes(color = NULL), color = "black", se = FALSE, fullrange = TRUE) +
   # data points
   geom_point(size = 4) +
   # point at experimental conditions
   geom_errorbar(data = eq_regression, color = "black", 
-                map = aes(ymin = eps_aq_gas.permil - eps_aq_gas_se.permil, ymax = eps_aq_gas.permil + eps_aq_gas_se.permil)) +
+                map = aes(ymin = eps_aq_gas - eps_aq_gas_se, ymax = eps_aq_gas + eps_aq_gas_se)) +
   geom_point(data = eq_regression, size = 6, shape = 18, color = "black") +
   # scales
   scale_x_continuous(expand = c(0, 0)) +
@@ -174,7 +175,7 @@ eq_data %>%
 ```
 
 
-## Calculate regression parameters
+## Determine model parameters
 
 ```{r}
 # model data
@@ -196,7 +197,7 @@ model <-
   model_data %>% 
   nest(-organism) %>% 
   # add gas/aqueous equilibrium fractionation
-  merge(select(eq_regression, eps_aq_gas.permil, eps_aq_gas_se.permil)) %>% 
+  merge(select(eq_regression, eps_aq_gas, eps_aq_gas_se)) %>% 
   as_data_frame() %>% 
   mutate(
     # bootstrap intercept from regression model
@@ -212,8 +213,8 @@ model <-
     intercept = map_dbl(bootstrap, ~mean(.x$t[,1])),
     intercept_se = map_dbl(bootstrap, ~sd(.x$t[,1])),
     # nitrogenase fractionation factor (eps_fix)
-    eps_fix = intercept - eps_aq_gas.permil,
-    eps_fix_se = sqrt(intercept_se^2 + eps_aq_gas_se.permil^2),
+    eps_fix = -intercept + eps_aq_gas,
+    eps_fix_se = sqrt(intercept_se^2 + eps_aq_gas_se^2),
     r2 = map_dbl(bootstrap, ~mean(.x$t[,2]))
   ) %>% select(-bootstrap)
 
@@ -224,18 +225,24 @@ model %>% select(-data) %>% kable(d=3)
 
 ## Visualize isotope model
 
-```{r figure_isotope_model, fig.width = 8, fig.height = 6, warning=FALSE}
+```{r figure_isotope_model, fig.width = 6, fig.height = 6, warning=FALSE}
 model %>% 
   # unnest 
   unnest(data) %>% 
   # select averages for plotting
-  select(x, x_se, eps_mean, eps_mean_se, eps_fix, eps_fix_se, eps_aq_gas.permil) %>% unique() %>% 
+  select(x, x_se, eps_mean, eps_mean_se, intercept, intercept_se) %>% unique() %>% 
   ggplot(aes(x = x, y = eps_mean)) +
-  # intercept (eps fix estimate)
-  geom_rect(map = aes(ymin = eps_fix - eps_fix_se + eps_aq_gas.permil, 
-                      ymax = eps_fix + eps_fix_se + eps_aq_gas.permil, 
-                      xmin = -Inf, xmax = Inf), fill = "light grey") + 
-  geom_hline(map = aes(yintercept = eps_fix + eps_aq_gas.permil), linetype = 2) +
+  # intercept (eps ag/g - eps fix estimate)
+  geom_rect(map = aes(ymin = intercept - intercept_se,
+                      ymax = intercept + intercept_se,
+                      xmin = -Inf, xmax = Inf), fill = "light grey") +
+  geom_hline(map = aes(yintercept = intercept), linetype = 2) +
+  # intercept text label
+  geom_text(data = function(df) select(df, intercept, intercept_se) %>% unique(), 
+            map = aes(x = 63, y = intercept + intercept_se, 
+                      label = TeX("$=\\epsilon_{\\,\\frac{aq}{g}}-\\epsilon_{fix}$") %>% 
+                        as.character()),
+            parse = TRUE, hjust = 1.05, vjust = -0.2, size = 8) +
   # linear fit
   geom_smooth(method = "lm", map = aes(color = NULL), color = "black", se = FALSE, fullrange = TRUE) +
   # 1 sigma error bars for averages
@@ -245,16 +252,12 @@ model %>%
   geom_point(shape = 21, fill = "#999999", color = "black", size = 5) + 
   # scales
   scale_x_continuous(expand = c(0, 0), breaks = (0:6)*10) + expand_limits(x=0) + 
-  scale_y_continuous(breaks = c(0:20)*-0.2, 
-                     sec.axis = sec_axis(
-                       ~.-eq_regression$eps_aq_gas.permil,
-                       breaks = c(0:20)*-0.2,
-                       name = TeX("$^{15}\\epsilon_{\\,\\frac{N_{org}}{N_{2,aq}}}$ \\[\U2030\\]"))) + 
+  scale_y_continuous(breaks = c(0:20)*-0.2) + 
   # labels
   labs(y = TeX("$^{15}\\epsilon_{\\,\\frac{N_{org}}{N_{2,gas}}}$ \\[\U2030\\]"), 
        x = TeX("$\\frac{\\mu \\cdot n_{cbh}}{pN_2}\\,\\left[\\frac{cells}{day\\cdot bar}\\right]$")) + 
   # theme
-  theme_figure(legend = FALSE, grid = TRUE) + theme(plot.margin = unit(c(0, 0.5, 0, 0), "cm"))
+  theme_figure(legend = FALSE, grid = TRUE)
 ```
 
 
