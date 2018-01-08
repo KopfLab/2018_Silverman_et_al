@@ -11,7 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
-subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/) / [growth_curves_analysis.Rmd](http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/growth_curves_analysis.Rmd)"
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [growth_curves_analysis.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/growth_curves_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
 ---
@@ -27,13 +27,13 @@ library(broom) # processing regression data
 source(file.path("lib", "functions.R"))
 opts_chunk$set(
   dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
-  fig.keep="all", fig.path=file.path("figures", "2017_Silverman_et_al-"))
+  fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
 ```
 
 # Load Data
 
 ```{r}
-OD_data <- read_excel(file.path("data", "2017_Silverman_et_al-OD_data.xlsx"))
+OD_data <- read_excel(file.path("data", "2018_Silverman_et_al-OD_data.xlsx"))
 ```
 
 # Growth curves
@@ -132,7 +132,7 @@ growth_rates <-
     r2 = map_dbl(bootstrap, ~mean(.x$t[,2]))
   ) %>% 
   select(-bootstrap, -data)
-growth_rates %>% write.xlsx(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
+growth_rates %>% write.xlsx(file.path("data", "2018_Silverman_et_al-growth_rate_data.xlsx"))
 kable(growth_rates, d=2)
 ```
 

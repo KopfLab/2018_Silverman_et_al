@@ -11,7 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
-subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2017_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/isotope_analysis.Rmd)"
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/isotope_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
 ---
@@ -28,15 +28,15 @@ library(broom) # efficient retrieval of model parameters
 source(file.path("lib", "functions.R"))
 opts_chunk$set(
   dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
-  fig.keep="all", fig.path=file.path("figures", "2017_Silverman_et_al-"))
+  fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
 ```
 
 # Load Data
 
 ```{r}
-isotope_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_data.xlsx"))
-growth_rate_data <- read_excel(file.path("data", "2017_Silverman_et_al-growth_rate_data.xlsx"))
-heterocyst_data_summary <- read_excel(file.path("data", "2017_Silverman_et_al-heterocyst_data_summary.xlsx"))
+isotope_data <- read_excel(file.path("data", "2018_Silverman_et_al-isotope_data.xlsx"))
+growth_rate_data <- read_excel(file.path("data", "2018_Silverman_et_al-growth_rate_data.xlsx"))
+heterocyst_data_summary <- read_excel(file.path("data", "2018_Silverman_et_al-heterocyst_data_summary.xlsx"))
 ```
 
 # Isotope data
@@ -81,7 +81,7 @@ isotope_data_summary <- isotope_data %>%
 
 # save data summary and data table
 isotope_data_summary %>% select(-data, -bootstrap) %>%
-  write.xlsx(file.path("data", "2017_Silverman_et_al-isotope_data_summary.xlsx"))
+  write.xlsx(file.path("data", "2018_Silverman_et_al-isotope_data_summary.xlsx"))
 
 isotope_data_table <-
   isotope_data_summary %>% 
@@ -123,7 +123,7 @@ isotope_data_summary %>%
 
 ```{r SI_gas_aq_equilibrium, fig.width = 8, fig.height = 6, warning=FALSE}
 # literature data
-eq_data <- read_excel(file.path("data", "2017_Silverman_et_al-isotope_literature_data.xlsx"), 
+eq_data <- read_excel(file.path("data", "2018_Silverman_et_al-isotope_literature_data.xlsx"), 
                       sheet = "gas liquid equilibrium")
 
 # calculate regression parameters and estimate eps aq/gas at exp. temperature
@@ -219,7 +219,7 @@ model <-
   ) %>% select(-bootstrap)
 
 # save and display
-model %>% select(-data) %>% write.xlsx(file.path("data", "2017_Silverman_et_al-isotope_model.xlsx"))
+model %>% select(-data) %>% write.xlsx(file.path("data", "2018_Silverman_et_al-isotope_model.xlsx"))
 model %>% select(-data) %>% kable(d=3)
 ```
 
