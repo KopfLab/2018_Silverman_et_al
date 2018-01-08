@@ -11,7 +11,7 @@
 
 <meta name="author" content="Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure." />
 
-<meta name="date" content="2017-12-23" />
+<meta name="date" content="2018-01-08" />
 
 <title>Analysis: Heterocyst Spacing</title>
 
@@ -236,16 +236,16 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Analysis: Heterocyst Spacing</h1>
-<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/heterocyst_analysis.Rmd">heterocyst_analysis.Rmd</a></em></h3>
+<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/heterocyst_analysis.Rmd">heterocyst_analysis.Rmd</a></em></h3>
 <h4 class="author"><em>Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure.</em></h4>
-<h4 class="date"><em>23 Dec 2017</em></h4>
+<h4 class="date"><em>08 Jan 2018</em></h4>
 
 </div>
 
 
 <div id="load-data" class="section level1">
 <h1><span class="header-section-number">1</span> Load Data</h1>
-<pre class="r"><code>heterocyst_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-heterocyst_data.xlsx&quot;))</code></pre>
+<pre class="r"><code>heterocyst_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-heterocyst_data.xlsx&quot;))</code></pre>
 </div>
 <div id="all-heterocyst-data" class="section level1">
 <h1><span class="header-section-number">2</span> All heterocyst data</h1>
@@ -900,9 +900,9 @@ heterocyst_differences_table %&gt;% kable(d=2)</code></pre>
 <h1><span class="header-section-number">4</span> Enzyme kinetics interpretation</h1>
 <div id="load-additional-data" class="section level2">
 <h2><span class="header-section-number">4.1</span> Load additional data</h2>
-<pre class="r"><code>isotope_data_summary &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_data_summary.xlsx&quot;))
-isotope_model &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_model.xlsx&quot;))
-growth_rate_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-growth_rate_data.xlsx&quot;))</code></pre>
+<pre class="r"><code>isotope_data_summary &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_data_summary.xlsx&quot;))
+isotope_model &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_model.xlsx&quot;))
+growth_rate_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-growth_rate_data.xlsx&quot;))</code></pre>
 </div>
 <div id="calculate-michaelis-menten-fit" class="section level2">
 <h2><span class="header-section-number">4.2</span> Calculate michaelis menten fit</h2>

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Silverman et al." />
 
-<meta name="date" content="2017-12-23" />
+<meta name="date" content="2018-01-08" />
 
 <title>Analysis: Isotope Fractionation</title>
 
@@ -236,18 +236,18 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Analysis: Isotope Fractionation</h1>
-<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/isotope_analysis.Rmd">heterocyst_analysis.Rmd</a></em></h3>
+<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/isotope_analysis.Rmd">heterocyst_analysis.Rmd</a></em></h3>
 <h4 class="author"><em>Silverman et al.</em></h4>
-<h4 class="date"><em>23 Dec 2017</em></h4>
+<h4 class="date"><em>08 Jan 2018</em></h4>
 
 </div>
 
 
 <div id="load-data" class="section level1">
 <h1><span class="header-section-number">1</span> Load Data</h1>
-<pre class="r"><code>isotope_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_data.xlsx&quot;))
-growth_rate_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-growth_rate_data.xlsx&quot;))
-heterocyst_data_summary &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-heterocyst_data_summary.xlsx&quot;))</code></pre>
+<pre class="r"><code>isotope_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_data.xlsx&quot;))
+growth_rate_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-growth_rate_data.xlsx&quot;))
+heterocyst_data_summary &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-heterocyst_data_summary.xlsx&quot;))</code></pre>
 </div>
 <div id="isotope-data" class="section level1">
 <h1><span class="header-section-number">2</span> Isotope data</h1>
@@ -289,7 +289,7 @@ isotope_data_summary &lt;- isotope_data %&gt;%
 
 # save data summary and data table
 isotope_data_summary %&gt;% select(-data, -bootstrap) %&gt;%
-  write.xlsx(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_data_summary.xlsx&quot;))
+  write.xlsx(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_data_summary.xlsx&quot;))
 
 isotope_data_table &lt;-
   isotope_data_summary %&gt;% 
@@ -396,7 +396,7 @@ isotope_data_table %&gt;%  kable(d=3)</code></pre>
 <div id="calculate-relevant-aqueousgas-fractionation" class="section level2">
 <h2><span class="header-section-number">3.1</span> Calculate relevant aqueous/gas fractionation</h2>
 <pre class="r"><code># literature data
-eq_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_literature_data.xlsx&quot;), 
+eq_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_literature_data.xlsx&quot;), 
                       sheet = &quot;gas liquid equilibrium&quot;)
 
 # calculate regression parameters and estimate eps aq/gas at exp. temperature
@@ -513,7 +513,7 @@ model &lt;-
   ) %&gt;% select(-bootstrap)
 
 # save and display
-model %&gt;% select(-data) %&gt;% write.xlsx(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-isotope_model.xlsx&quot;))
+model %&gt;% select(-data) %&gt;% write.xlsx(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-isotope_model.xlsx&quot;))
 model %&gt;% select(-data) %&gt;% kable(d=3)</code></pre>
 <table>
 <thead>

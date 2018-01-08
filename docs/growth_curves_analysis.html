@@ -11,7 +11,7 @@
 
 <meta name="author" content="Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure." />
 
-<meta name="date" content="2017-12-23" />
+<meta name="date" content="2018-01-08" />
 
 <title>Analysis: Growth Curves</title>
 
@@ -236,16 +236,16 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Analysis: Growth Curves</h1>
-<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2017_Silverman_et_al/blob/master/growth_curves_analysis.Rmd">growth_curves_analysis.Rmd</a></em></h3>
+<h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/growth_curves_analysis.Rmd">growth_curves_analysis.Rmd</a></em></h3>
 <h4 class="author"><em>Silverman, Kopf, Gordon, Bebout, Som. Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure.</em></h4>
-<h4 class="date"><em>23 Dec 2017</em></h4>
+<h4 class="date"><em>08 Jan 2018</em></h4>
 
 </div>
 
 
 <div id="load-data" class="section level1">
 <h1><span class="header-section-number">1</span> Load Data</h1>
-<pre class="r"><code>OD_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-OD_data.xlsx&quot;))</code></pre>
+<pre class="r"><code>OD_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-OD_data.xlsx&quot;))</code></pre>
 </div>
 <div id="growth-curves" class="section level1">
 <h1><span class="header-section-number">2</span> Growth curves</h1>
@@ -340,7 +340,7 @@ growth_rates &lt;-
     r2 = map_dbl(bootstrap, ~mean(.x$t[,2]))
   ) %&gt;% 
   select(-bootstrap, -data)
-growth_rates %&gt;% write.xlsx(file.path(&quot;data&quot;, &quot;2017_Silverman_et_al-growth_rate_data.xlsx&quot;))
+growth_rates %&gt;% write.xlsx(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-growth_rate_data.xlsx&quot;))
 kable(growth_rates, d=2)</code></pre>
 <table>
 <thead>
