@@ -285,8 +285,8 @@ mm_model %>%
   geom_rect(map = aes(xmin = Km.bar - Km_se.bar, xmax = Km.bar + Km_se.bar, ymin = -Inf, ymax = Inf), fill = "light grey") + 
   geom_vline(map = aes(xintercept = Km.bar), linetype = 2) +
   # model predictions
-  geom_smooth(method = "loess", span = 1, se = FALSE, map = aes(y = n_cbh_pred), color = cbPalette[5]) +
-  geom_point(map = aes(y = n_cbh_pred), size = 5, shape = 23, color = "black", fill = cbPalette[5]) +
+  geom_smooth(method = "loess", span = 1, se = FALSE, map = aes(y = n_cbh_pred), color = "black", size = 1.5) +
+  geom_point(map = aes(y = n_cbh_pred), size = 5, shape = 23, color = "black", fill = "black") +
   # original data
   geom_point(map = aes(y = n_cbh_mean), size = 4, shape = 21, color = "black", fill = "gray") + 
   # organism panels
