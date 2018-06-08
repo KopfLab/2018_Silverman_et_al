@@ -20,3 +20,6 @@ editor_options:
 
 # - [Isotope Fractionation](isotope_analysis.html)
 
+# - [pH/O2 Calculations](pH_O2_calculations.html)
+
+# - [Other Controls](other_controls.html)
