@@ -183,8 +183,12 @@ model_data <-
   isotope_data_summary %>% 
   filter(organism == "A. cylindrica") %>% 
   unnest(data) %>% 
+  # add in growth rate information
   left_join(growth_rate_data, by = c("pN2", "organism")) %>% 
-  left_join(heterocyst_data_summary, by = c("pN2", "organism")) %>% 
+  # add in mean heterocyst distances from corresponding data points
+  left_join(
+    heterocyst_data_summary %>% filter(growth_phase == "stationary"), 
+    by = c("pN2", "organism")) %>% 
   mutate(
     # calculate the combination of dependent variables for the regression
     x = growth_rate.day * n_cbh_mean / pN2,
