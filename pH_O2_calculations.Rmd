@@ -1,0 +1,256 @@
+---
+title: "Analysis: pH and O2 calculations"
+author: "Silverman et al."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [carbonate_chemistry.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/pH_O2_calculations.Rmd)"
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(latex2exp) # for latex plot labels
+library(readxl) # for reading data
+library(gridExtra) # for multi plot
+source(file.path("lib", "functions.R"))
+knitr::opts_chunk$set(
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
+```
+
+# Yield Experiment
+
+Total growth yield of *Anabaena cylindrica* from a single headspace flush with 0.2 bar CO2.
+
+```{r "SI_0.2bar_CO2_yield", fig.width = 5, fig.height = 4}
+OD_data <- read_excel(file.path("data", "2018_Silverman_et_al-controls_data.xlsx"), sheet = "pCO2 yield OD")
+
+# OD yield
+yield <- OD_data %>% 
+  filter(type == "sample") %>%
+  group_by(day) %>% 
+  summarize(OD750 = mean(OD750)) %>% 
+  filter(OD750 == max(OD750))
+yield
+
+# plot
+OD_plot <- OD_data %>% 
+  ggplot() +
+  # plot-wide aesthetics
+  aes(x = day, y = OD750, shape = type) +
+  #  OD indicator lines
+  geom_hline(
+    data = data_frame(D_OD = seq(0.1, 0.4, by = 0.1)),
+    mapping = aes(yintercept = D_OD, color = factor(D_OD)),
+    size = 1, linetype = 2
+  ) +
+  # all data (small translucent points)
+  geom_point(size = 2, alpha = 0.5, fill = "gray") +
+  # averages and lines connection them
+  stat_summary(fun.y = mean, geom = "line", size = 1) +
+  stat_summary(fun.y = mean, geom = "point", size = 4, fill = "gray") +
+  # scale
+  scale_x_continuous(breaks = 0:10) +
+  scale_color_manual(values = cbPalette) +
+  scale_shape_manual(values = c(21:26)) +
+  # labels
+  labs(x = "day", y = TeX("$OD_{750}$"), 
+       color = TeX("$\\Delta OD_{750}$"), 
+       shape = "") +
+  # theme
+  theme_figure() 
+OD_plot
+```
+
+# Equations
+
+## Gas dissolution
+
+CO2 is moderately soluable in water forming aqueous CO2 and hydrated carbonic acid with a Henry's law constant of $K_H = 3.3 \cdot 10^{-4} \frac{mol}{m^3 Pa} = 0.033 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
+
+O2 is sparingly soluable in water with a Henry's law constant of $K_H = 1.3 \cdot 10^{-5} \frac{mol}{m^3 Pa} = 0.0013 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
+
+All constants and temperature scaling relationships for Henry's law constants used here are from Sander, R.: Compilation of Henry's law constants (version 4.0) for water as solvent, Atmos. Chem. Phys., 15, 4399-4981, https://doi.org/10.5194/acp-15-4399-2015, 2015.
+
+## Carbonate system
+
+The carbonate system has a couple of general equilibrium equations that constrain species distribution in aqueous systems at equilibrium (assuming SPT for all stability constants):
+
+$$
+\begin{aligned}
+\textrm{dissociation of carbonic acid: } &
+  H_2CO_3^* \rightleftharpoons H^+ + HCO_3^- \\
+  &\textrm{with dissociation constant } \frac{[H^+][HCO_3^-]}{[H_2CO_3^*]} = K_1 = 10^{-6.3} \\
+\textrm{dissociation of bicarbonate: } & 
+  HCO_3^- \rightleftharpoons H^+ + CO_3^{2-} \\
+  &\textrm{with dissociation constant } \frac{[H^+][CO_3^{2-}]}{[HCO_3^-]} = K_2 = 10^{-10.3} \\
+\textrm{water dissociation: } &
+  H_2O \rightleftharpoons H^+ + OH^- \\
+  &\textrm{with dissociation constant } [H^+][OH^-] = K_w = 10^{-14} \\
+\textrm{dissolved inorganic carbon (DIC): } &
+  [DIC] = [H_2CO_3^*] + [HCO3_-] + [CO_3^{2-}] \\
+\textrm{charge balance (not considering any other solutes): } &
+  [H^+] - [HCO_3^-] - 2\cdot[CO_3^{2-}] - [OH^-] = 0
+\end{aligned}
+$$
+ 
+## Charge balance
+
+Besides the carbonate sytem, both the basicity from the addition of sodium hydroxide (adding $[Na^+]$ and $[OH^-]$ during initial pH adjustment) and any dissociated pH buffer (here the portion of the total HEPES, $[A_T]$ for short, that is dissociated into $[A^-]$ and $[H^+]$ with acid dissociation constant $K_a = \frac{[A^-][H^+]}{[AH]}$ and mass balance $[A_T] = [AH] + [A^-]$) contribute to the overall charge balance (note that the second dissociation of HEPES around pH 3 is not significant at the circumneutral pHs considered here and thus omitted for clarity):
+
+$$
+[H^+] - [HCO_3^-] - 2\cdot[HCO_3^{2-}] - [OH^-] - [A^-]+ [Na^+] = 0 
+$$
+
+Substituting in all relevant acid dissociation and gas dissolution constants ($K_x$) yields the following equation:
+
+$$
+[H^+] + [Na^+] - 
+  \frac{K_a \cdot [A_T]}{K_a+[H^+]} - 
+  \frac{K_1 K_H \cdot P_{CO_2}}{[H^+]} - 
+  2 \frac{K_1 K_2 K_H \cdot P_{CO_2}}{[H^+]^2} -
+  \frac{K_w}{[H^+]} = 0
+$$
+## Closed System
+
+For a closed system such as the one used in this study (stoppered culture tubes), the mass balance based on total moles of carbon in the entire system provides an additional constraint.
+
+### Mass Balance
+
+$$
+\begin{aligned}
+C_{T} &= n_{CO_2(g)} + V_{liquid} \cdot DIC \\
+DIC &= [H_2CO_3^*] + [HCO_3^-] + [CO_3^{2-}] = K_H \cdot P_{CO_2} \left(1 + \frac{K_1}{[H^+]} + \frac{K_1 K_2}{[H^+]^2} \right) \\
+n_{CO_2(g)} &= \frac{P_{CO_2} \cdot V_{headspace}}{RT} \\
+C_{T} &= P_{CO_2} \cdot \left[\frac{V_{headspace}}{RT} + V_{liquid} \cdot K_H \left( 1 + \frac{K_1}{[H^+]} + \frac{K_1 K_2}{[H^+]^2} \right) \right] 
+\end{aligned}
+$$
+
+### Final equation
+
+With these constraints, a final equation relating pH to the added base ($[Na+^]$), total buffer ($[A_T]$), total inorganic carbon ($C_t$) and headspace + liquid volume in the system can be derived and solved for pH by standard numerical root-finding algorithms. 
+
+$$
+\begin{aligned}
+[H^+] + [Na^+] - 
+  \frac{K_a}{K_a+[H^+]} \cdot [A_T] - 
+  \frac{\frac{K_1}{[H^+]} + 2\frac{K_1 K_2}{[H^+]^2}}
+        {\frac{V_{headspace}}{K_H\cdot RT} + \left( 1 + \frac{K_1}{[H^+]} + \frac{K_1 K_2}{[H^+]^2} \right) V_{liquid}} \cdot C_T -
+  \frac{K_w}{[H^+]} &= 0 \\
+10^{-pH} 
++ [Na^+] 
+- \frac{1}{1 + 10^{(pK_a-pH)}}\cdot [A_T]
+- \frac{10^{(pH-pK_1)} + 2\cdot 10^{(2\cdot pH-pK_1-pK_2)}}
+        {\frac{V_{headspace}}{K_H\cdot RT} + \left(1 + 10^{(pH-pK_1)} + 10^{(2\cdot pH-pK_1-pK_2)}\right) V_{liquid}} 
+        \cdot C_T
+- 10^{(pH-pK_w)} &= 0
+\end{aligned}
+$$
+
+# System
+
+The experimental system in this study consists of 25mL anaerobic culture tubes with 10mL of medium and 15mL of headspace initially adjusted to a pH of 7.8 in the presence of 20mM HEPES (pKa = 7.5) under atmospheric $CO_2$ conditions (~400 ppm) at room temperature. Upon quick flushing of the headspace with different gas mixtures that contain 0.2 bar CO2, the total inorganic carbon ($C_T$) is increased which leads to a decrease in pH. As the inorganic carbon is consumed through photosynthetic activity, the pH increases again and in parallel molecular oxygen ($O_2$) is produced with the 1:1 stoichiometry of photosynthesis ($CO_2 + H_2O \rightarrow O_2 + CH_2O$) and distributes between the liquid and gas phase according to the Henry's law constant for $O_2$ (equations for closed system $O_2$ below). Efficient equilibration between the headspace and liquid during growth is achieved by continuous agitation. The following plots illustrate the pH and O2 variations that can result after an inorgic carbon spike.
+
+$$
+\begin{aligned}
+O_{2(total)} &= n_{O_2(g)} + V_{liquid} \cdot [O_{2(aq)}] = \frac{P_{O_2} \cdot V_{headspace}}{RT} + K_H \cdot P_{O_2} \cdot V_{liquid} \\
+\rightarrow P_{O_2} &= \frac{O_{2(total)}}{\frac{V_{headspace}}{RT} + K_H \cdot V_{liquid}}
+\end{aligned}
+$$
+
+```{r}
+# calculations
+plot_df <- data_frame(
+  # initial conditions
+  pH_init = 7.8,
+  HEPES.mM = 20,
+  V_liquid.mL = 10,
+  V_headspace.mL = 15,
+  Na_total.mM = calc_open_system_unbalanced_ions(
+    pH = pH_init, pCO2.bar = 400/1e6, 
+    buffer.M = HEPES.mM/1e3, pKa = 7.5, 
+    temp.C = 22) * 1e3,
+  C_init.mmol = calc_CIT_amount(
+    pH = pH_init, pCO2.bar = 400/1e6,
+    Vl.L = V_liquid.mL/1e3, Vg.L = V_headspace.mL/1e3, 
+    temp.C = 22) * 1e3,
+  # carbon spike
+  C_spike.mmol = calc_CO2g_amount(
+    pCO2.bar = 0.2, Vg.L = V_headspace.mL/1e3, temp.C = 22) * 1e3,
+  # consumption of total inorganic carbon
+  C_total.mmol = seq(C_init.mmol + C_spike.mmol, 0, length.out = 20),
+  # resulting pH during growth (at 27C)
+  pH = calc_closed_system_pH(
+    CIT.mol = C_total.mmol/1e3, Vl.L = V_liquid.mL/1e3, Vg.L = V_headspace.mL/1e3, 
+    buffer.M = HEPES.mM/1e3, pKa = 7.5, unbalanced_ions.M = Na_total.mM/1e3, 
+    temp.C = 27),
+  # resulting O2 accumulation
+  O2_total.mmol = C_total.mmol[1] - C_total.mmol,
+  `pO2 [bar]` = calc_closed_system_pO2(
+    O2_total.mol = O2_total.mmol/1e3, Vl.L = V_liquid.mL/1e3, Vg.L = V_headspace.mL/1e3, temp.C = 27)
+) 
+plot_df
+```
+
+```{r "SI_pH_pO2_variation", fig.width=6, fig.height=7}
+# O2 data
+O2_data <- 
+  read_excel(
+    file.path("data", "2018_Silverman_et_al-controls_data.xlsx"), 
+    sheet = "pCO2 yield O2") %>% 
+  gather(var, val, `pO2 [bar]`) 
+
+# plot
+pH_O2_plot <- plot_df %>% 
+  gather(var, val, pH, `pO2 [bar]`) %>% 
+  ggplot() + 
+  aes(1-C_total.mmol/C_total.mmol[1], val) +
+  # OD indicators
+  geom_vline(
+    data = data_frame(
+      D_OD = seq(0.1, 0.4, by = 0.1),
+      C_percent = D_OD / yield$OD750),
+    mapping = aes(xintercept = C_percent, color = factor(D_OD)),
+    size = 1, linetype = 2
+  ) +
+  # atmospheric oxygen line
+  geom_hline(
+    data = data_frame(y = 0.21, var = "pO2 [bar]"),
+    mapping = aes(yintercept = y), size = 1, linetype = 3
+  ) +
+  # model line
+  geom_line() +
+  # O2 data points
+  geom_point(data = O2_data, mapping = aes(x = 0.95, shape = type), 
+             fill = "gray", size = 3) +
+  # scales
+  scale_x_continuous("inorganic carbon\nconsumed", 
+                     labels = scales::percent, expand = c(0,0)) +
+  scale_color_manual(values = cbPalette) +
+  scale_shape_manual(values = c(21:26)) +
+  facet_grid(var~., scales = "free_y", switch = "y") + 
+  theme_figure() + 
+  labs(y=NULL, color = TeX("$\\Delta OD_{750}$"), shape = "")
+pH_O2_plot
+```
+
+## Combined Plot
+
+```{r "SI_yield_pH_O2", fig.width=10, fig.height=6}
+grid.arrange(
+  OD_plot + labs(title = "A") +
+    theme(legend.position = "none"), 
+  pH_O2_plot + labs(title = "B") + 
+    theme(legend.position = "left", plot.margin = margin(r = 20, l = 15)), 
+  ncol = 2, widths = c(3, 4))
+```
+
