@@ -8,5 +8,4 @@ tables/*
 *_cache/*
 ~$*
 *.html
-docs*/
-!docs/*.html
+!/docs/*.html
