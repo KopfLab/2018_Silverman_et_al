@@ -11,6 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
+    df_print: paged
 subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [carbonate_chemistry.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/pH_O2_calculations.Rmd)"
 editor_options:
   chunk_output_type: inline
@@ -108,7 +109,7 @@ $$
 Besides the carbonate sytem, both the basicity from the addition of sodium hydroxide (adding $[Na^+]$ and $[OH^-]$ during initial pH adjustment) and any dissociated pH buffer (here the portion of the total HEPES, $[A_T]$ for short, that is dissociated into $[A^-]$ and $[H^+]$ with acid dissociation constant $K_a = \frac{[A^-][H^+]}{[AH]}$ and mass balance $[A_T] = [AH] + [A^-]$) contribute to the overall charge balance (note that the second dissociation of HEPES around pH 3 is not significant at the circumneutral pHs considered here and thus omitted for clarity):
 
 $$
-[H^+] - [HCO_3^-] - 2\cdot[HCO_3^{2-}] - [OH^-] - [A^-]+ [Na^+] = 0 
+[H^+] + [Na^+] - [A^-] - [HCO_3^-] - 2\cdot[HCO_3^{2-}] - [OH^-] = 0 
 $$
 
 Substituting in all relevant acid dissociation and gas dissolution constants ($K_x$) yields the following equation:
@@ -120,6 +121,7 @@ $$
   2 \frac{K_1 K_2 K_H \cdot P_{CO_2}}{[H^+]^2} -
   \frac{K_w}{[H^+]} = 0
 $$
+
 ## Closed System
 
 For a closed system such as the one used in this study (stoppered culture tubes), the mass balance based on total moles of carbon in the entire system provides an additional constraint.
@@ -141,7 +143,7 @@ With these constraints, a final equation relating pH to the added base ($[Na+^]$
 
 $$
 \begin{aligned}
-[H^+] + [Na^+] - 
+\left[H^+\right] + [Na^+] - 
   \frac{K_a}{K_a+[H^+]} \cdot [A_T] - 
   \frac{\frac{K_1}{[H^+]} + 2\frac{K_1 K_2}{[H^+]^2}}
         {\frac{V_{headspace}}{K_H\cdot RT} + \left( 1 + \frac{K_1}{[H^+]} + \frac{K_1 K_2}{[H^+]^2} \right) V_{liquid}} \cdot C_T -
