@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 # Yield Experiment
 
-Total growth yield of *Anabaena cylindrica* from a single headspace flush with 0.2 bar CO2.
+Total growth yield of *Anabaena cylindrica* from a single headspace flush with 0.2 bar $CO_2$.
 
 ```{r "SI_0.2bar_CO2_yield", fig.width = 5, fig.height = 4}
 OD_data <- read_excel(file.path("data", "2018_Silverman_et_al-controls_data.xlsx"), sheet = "pCO2 yield OD")
@@ -76,9 +76,9 @@ OD_plot
 
 ## Gas dissolution
 
-CO2 is moderately soluable in water forming aqueous CO2 and hydrated carbonic acid with a Henry's law constant of $K_H = 3.3 \cdot 10^{-4} \frac{mol}{m^3 Pa} = 0.033 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
+$CO_2$ is moderately soluble in water forming aqueous $CO_2$ and hydrated carbonic acid with a Henry's law constant of $K_H = 3.3 \cdot 10^{-4} \frac{mol}{m^3 Pa} = 0.033 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
 
-O2 is sparingly soluable in water with a Henry's law constant of $K_H = 1.3 \cdot 10^{-5} \frac{mol}{m^3 Pa} = 0.0013 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
+$O_2$ is sparingly soluble in water with a Henry's law constant of $K_H = 1.3 \cdot 10^{-5} \frac{mol}{m^3 Pa} = 0.0013 \frac{M}{atm}$ at $T = 298.15 K$ (25C). 
 
 All constants and temperature scaling relationships for Henry's law constants used here are from Sander, R.: Compilation of Henry's law constants (version 4.0) for water as solvent, Atmos. Chem. Phys., 15, 4399-4981, https://doi.org/10.5194/acp-15-4399-2015, 2015.
 
@@ -98,7 +98,7 @@ $$
   H_2O \rightleftharpoons H^+ + OH^- \\
   &\textrm{with dissociation constant } [H^+][OH^-] = K_w = 10^{-14} \\
 \textrm{dissolved inorganic carbon (DIC): } &
-  [DIC] = [H_2CO_3^*] + [HCO3_-] + [CO_3^{2-}] \\
+  [DIC] = [H_2CO_3^*] + [HCO_3^-] + [CO_3^{2-}] \\
 \textrm{charge balance (not considering any other solutes): } &
   [H^+] - [HCO_3^-] - 2\cdot[CO_3^{2-}] - [OH^-] = 0
 \end{aligned}
@@ -128,6 +128,8 @@ For a closed system such as the one used in this study (stoppered culture tubes)
 
 ### Mass Balance
 
+Total inorganic carbon ($C_T$) can be mass balanced using the ideal gas law and relevant acid dissociation and gas dissolution constants.
+
 $$
 \begin{aligned}
 C_{T} &= n_{CO_2(g)} + V_{liquid} \cdot DIC \\
@@ -139,7 +141,7 @@ $$
 
 ### Final equation
 
-With these constraints, a final equation relating pH to the added base ($[Na+^]$), total buffer ($[A_T]$), total inorganic carbon ($C_t$) and headspace + liquid volume in the system can be derived and solved for pH by standard numerical root-finding algorithms. 
+With these constraints, a final equation relating pH to the added base ($[Na^+]$), total buffer ($[A_T]$), total inorganic carbon ($C_T$) and headspace + liquid volume in the system can be derived and solved for pH by standard numerical root-finding algorithms. 
 
 $$
 \begin{aligned}
@@ -160,7 +162,7 @@ $$
 
 # System
 
-The experimental system in this study consists of 25mL anaerobic culture tubes with 10mL of medium and 15mL of headspace initially adjusted to a pH of 7.8 in the presence of 20mM HEPES (pKa = 7.5) under atmospheric $CO_2$ conditions (~400 ppm) at room temperature. Upon quick flushing of the headspace with different gas mixtures that contain 0.2 bar CO2, the total inorganic carbon ($C_T$) is increased which leads to a decrease in pH. As the inorganic carbon is consumed through photosynthetic activity, the pH increases again and in parallel molecular oxygen ($O_2$) is produced with the 1:1 stoichiometry of photosynthesis ($CO_2 + H_2O \rightarrow O_2 + CH_2O$) and distributes between the liquid and gas phase according to the Henry's law constant for $O_2$ (equations for closed system $O_2$ below). Efficient equilibration between the headspace and liquid during growth is achieved by continuous agitation. The following plots illustrate the pH and O2 variations that can result after an inorgic carbon spike.
+The experimental system in this study consists of 25 mL anaerobic culture tubes with 10 mL of medium initially adjusted to a pH of 7.8 in the presence of 20 mM HEPES (pKa = 7.5), and 15 mL of headspace under atmospheric $CO_2$ conditions (~400 ppm) at room temperature. Upon quick flushing of the headspace with different gas mixtures that contain 0.2 bar $CO_2$, the total inorganic carbon ($C_T$) is increased which leads to a decrease in pH. As the inorganic carbon is consumed through photosynthetic activity, the pH increases again and in parallel molecular oxygen ($O_2$) is produced with the 1:1 stoichiometry of photosynthesis ($CO_2 + H_2O \rightarrow O_2 + CH_2O$) and distributes between the liquid and gas phase according to the Henry's law constant for $O_2$ (equations for closed system $O_2$ below). Efficient equilibration between the headspace and liquid during growth is achieved by continuous agitation. The following plots illustrate the pH and $O_2$ variations that can result after an inorganic carbon spike.
 
 $$
 \begin{aligned}
