@@ -238,7 +238,7 @@ Based on all data for *Anabaena cylindrica*.
 mm_model <- 
   # combine all the information
   heterocyst_data_summary %>% 
-  filter(organism == "A. cylindrica") %>% 
+  filter(organism == "A. cylindrica", growth_phase != "stationary") %>%  
   left_join(growth_rate_data, by = c("pN2", "organism")) %>% 
   left_join(isotope_data_summary, by = c("pN2", "organism")) %>% 
   left_join(isotope_model, by = "organism") %>% 
