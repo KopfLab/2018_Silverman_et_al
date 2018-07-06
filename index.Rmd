@@ -18,5 +18,10 @@ editor_options:
 
 # - [Heterocyst Spacing](heterocyst_analysis.html)
 
+# - [Isotope Calibration](isotope_calibration.html)
+
 # - [Isotope Fractionation](isotope_analysis.html)
 
+# - [pH/O2 Calculations](pH_O2_calculations.html)
+
+# - [Other Controls](other_controls.html)

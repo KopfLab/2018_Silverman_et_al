@@ -1,0 +1,487 @@
+---
+title: "Calibration: Isotope Data"
+author: "Silverman et al."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+    df_print: paged
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [isotope_calibration.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/isotope_calibration.Rmd)"
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, warning=FALSE, message=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(isoreader) # reading isotope data files
+library(isoprocessor) # processing isotope data
+library(readxl) # reading excel file
+library(openxlsx) # writing excel file
+library(knitr) # generating reports
+source(file.path("lib", "functions.R"))
+opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
+```
+
+Processed using the pre-release packages [isoreader](http://isoreader.kopflab.org) version `r packageVersion("isoreader")` and [isoprocessor](http://isoprocessor.kopflab.org/) version `r packageVersion("isoprocessor")`. To install the exact same versions from the time of writing, run `devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")` and `devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")`, respectively.
+
+# Biomass $\delta^{15}N$
+
+Biomass nitrogen isotopic composition was measured on an EA-IRMS as described in the methods section of the manuscript. The following code steps through the data processing and calibration to convert measured values to values vs. the international reference standard (Air N2).
+
+## Load EA-IRMS data
+
+```{r, message=FALSE}
+isofiles <- 
+  file.path(
+    "data", 
+    c("2018_Silverman_et_al-isotope_data_cylindrica.cf.rda",
+      "2018_Silverman_et_al-isotope_data_variabilis.cf.rda")
+  ) %>% 
+  iso_read_continuous_flow()
+```
+
+## Chromatograms
+
+Display chromatograms of the standards.
+
+```{r "ISO_IRMS_EA_chroms", fig.height = 10}
+isofiles %>% 
+  # select blanks and standards for chromatograms
+  iso_filter_files(
+    `Identifier 1` %in% 
+      c("blank", "acetanilide_1", "acetanilide_2", "acetanilide1", "acetanilide2")) %>% 
+  # calculate 29/28 ratio
+  iso_calculate_ratios("29/28") %>% 
+  iso_plot_continuous_flow_data(
+    data = c("29/28", "28", "29"),
+    color = `Identifier 1`,
+    linetype = dirname(file_path)
+  )
+```
+
+## Data Table
+
+Retrieve the data table.
+
+```{r}
+# aggregate data table
+data <- isofiles %>% 
+  # retrieve vendor data
+  iso_get_vendor_data_table(
+    select = 
+      c(ref_used = `Is Ref.?`, Start, Rt, End, 
+        `Ampl 28`, `Intensity All`, `rR 29N2/28N2`, `d 15N/14N`),
+    include_file_info = 
+      c(datetime = file_datetime, run = file_path, Analysis, Row,
+        name = `Identifier 1`, amount.mg = `Identifier 2`)
+  )  %>% 
+  # before peak jump
+  filter(Rt < 200) %>% 
+  # updates
+  mutate(
+    # run = last part of directory name for simplicity
+    run = basename(dirname(run)),
+    # convert to numbers
+    amount.mg = parse_number(amount.mg),
+    # correct nomenclature between the two runs
+    name = case_when(
+      name == "acetanilide_1" ~ "acetanilide1",
+      name == "acetanilide_2" ~ "acetanilide2",
+      TRUE ~ name), 
+    # introduce type column
+    type = case_when(
+      str_detect(name, "acetanilide") ~ "standard",
+      str_detect(name, "[Ee]mpty") ~ "empty",
+      str_detect(name, "blank") ~ "blank",
+      TRUE ~ "sample") 
+  )
+
+## map peaks
+peak_map <- data_frame(
+  compound = "N2", 
+  is_ref_peak = c(TRUE, TRUE, FALSE),
+  `Rt:EA1` = c(50, 100, 155)
+)
+peak_map
+
+# map peaks
+data_w_peaks <- data %>% 
+  # specify peak map
+  mutate(map_id = "EA1") %>% 
+  iso_map_peaks(peak_map, file_id = file_id, map_id = map_id, 
+                rt = Rt, rt_start = Start, rt_end = End)  
+
+# problematic peaks
+data_w_peaks %>% 
+  iso_get_problematic_peaks(select = c(file_id, compound, Start, Rt, End)) 
+
+# focus on non problematic peaks only
+data_w_peaks <- data_w_peaks %>% iso_remove_problematic_peaks()
+
+# reference peaks
+data_ref_peaks <- data_w_peaks %>% filter(is_ref_peak)
+
+# analyte peaks
+data_analyte_peaks <- data_w_peaks %>% filter(!is_ref_peak)
+```
+
+## Reference peaks
+
+Reference peaks show no significant variation between the pre- and post-analyte peak reference square peaks.
+
+```{r "ISO_IRMS_ref_variation", fig.width=8, fig.height=6}
+data_ref_peaks %>% 
+  iso_plot_ref_peaks(
+    is_ref_condition = is_ref_peak, 
+    ratio = c(`rR 29N2/28N2`),
+    group_id = Analysis,
+    within_group = TRUE,
+    is_ref_used = ref_used
+  ) 
+```
+
+# Data Processing
+
+## Signal Yield
+
+Signal intensity is properly linear vs. standard weights but yield (slope) is slightly different between the two analytical runs, which is not surprising since they were months apart and signal dilution was not exactly the same.
+
+```{r "ISO_IRMS_yield", fig.width = 8, fig.height= 6}
+# identifying two outliers that were mis-weighed
+data_analyte_peaks <- data_analyte_peaks %>%   
+  mutate(type = ifelse(Analysis %in% c("6029", "3066"), "outlier", type))
+
+# visualize calibration standards and rejected outliers
+data_analyte_peaks %>% 
+  filter(type %in% c("standard", "outlier")) %>% 
+  ggplot() +
+  aes(x = 1000*amount.mg, y = `Intensity All`, color = type, shape = run) +
+  geom_smooth(data = function(df) filter(df, type == "standard"), method = "lm") +
+  geom_point(size = 4) +
+  theme_bw() + labs(y = "Area [Vs]", x = "Amount [µg]")
+```
+
+## Isotopic values
+
+Add known isotope values for standards.
+
+```{r}
+standards <- data_frame(
+  name = c("acetanilide1", "acetanilide2"),
+  true_d15N = c(1.18, 19.56)
+)
+standards
+
+data_w_stds <-
+  data_analyte_peaks %>% 
+  # focus on analytes
+  filter(!is_ref_peak) %>% 
+  # add standard values
+  iso_add_standards(standards, match_by = name)
+```
+
+## Calibration
+
+Evaluate different calibration models across all standards (this combines blank correction, scale contraction, linearity effects and temporal drift and evaluates them all in tandem to gain a better understanding of the individual contributions and relevance).
+
+```{r}
+data_w_calibs <- data_w_stds %>% 
+  # group by each analytical run
+  iso_prepare_for_calibration(group_by = run) %>% 
+  # run calibrations
+  iso_generate_calibration(
+    model = c(
+      # simple model
+      delta_only = lm(`d 15N/14N` ~ true_d15N),
+      # multivariate with delta and amplitude
+      delta_and_ampl = lm(`d 15N/14N` ~ true_d15N + `Ampl 28`),
+      # + the delta and amplitude cross term
+      delta_cross_ampl = lm(`d 15N/14N` ~ true_d15N * `Ampl 28`),
+      # multivariate with delta and the datetime (i.e. checking for temporal drift)
+      delta_and_time = lm(`d 15N/14N` ~ true_d15N + datetime),
+      delta_cross_time = lm(`d 15N/14N` ~ true_d15N * datetime),
+      # multivariate with delta, amplitude and datetime
+      delta_and_ampl_and_time = lm(`d 15N/14N` ~ true_d15N + `Ampl 28` + datetime),
+      # multivariate with delta cross amplitude and datetime
+      delta_cross_ampl_and_time = lm(`d 15N/14N` ~ true_d15N * `Ampl 28` + datetime)
+    ), 
+    calibration = "d15N",
+    is_standard = type == "standard"
+  ) 
+```
+
+### Calibration Parameters
+
+The visualization of the calibration parameters reveals that as expected $^{15}\delta_{true}$ is the most important regressor (the scale contraction), and that the $^{15}\delta_{true} \cdot A_{15}$ and $^{15}\delta_{true} \cdot DT$ cross terms are not statistically significant although the linear intensity term $A_{15}$ is relevant for both analytical runs. Additionally, the *A. cylindrica* run also showing a statistically relevant (`***` = p.value < 0.001) linear drift correction term ($DT$) but no the *A. variabilis* run (no drift). See residuals below for additional information on these multivariate calibration regressions. 
+
+```{r "ISO_IRMS_calib_params", fig.width = 7, fig.height = 10, message=FALSE}
+# coefficient summary table
+data_w_calibs %>% iso_unnest_calibration_parameters("d15N")
+
+# type-setting calibrations
+data_w_calibs <- data_w_calibs %>% 
+  mutate(
+    tex_calib = as_factor(d15N_calib)%>% 
+      fct_recode(
+        "$^{15}\\delta_{true}$" = "delta_only",
+        "$^{15}\\delta_{true} + A_{15}$" = "delta_and_ampl",
+        "$^{15}\\delta_{true} + A_{15} + ^{15}\\delta_{true} \\cdot A_{15}$" = "delta_cross_ampl",
+        "$^{15}\\delta_{true} + DT$" = "delta_and_time",
+        "$^{15}\\delta_{true} + DT + ^{15}\\delta_{true} \\cdot DT$" = "delta_cross_time",
+        "$^{15}\\delta_{true} + A_{15} + DT$" = "delta_and_ampl_and_time",
+        "$^{15}\\delta_{true} + A_{15} + ^{15}\\delta_{true} \\cdot A_{15} + DT$" = "delta_cross_ampl_and_time"
+      )
+  )
+
+# plot to look at coefficients and summary
+data_w_calibs %>% 
+  iso_plot_calibration_parameters(
+    calibration = "d15N",
+    x = tex_calib,
+    shape = run,
+    color = signif,
+    select_from_summary = c(RMSD = sigma)
+  ) +
+  scale_x_discrete(labels = latex_labeller) + 
+  labs(x = NULL)
+```
+
+A look at the residuals confirms that the calibration that takes both drift and intensity in addition to the $\delta$ value into consideration ($^{15}\delta_{true} + A_{15} + DT$) captures most of the variation in the standards with $^{15}\delta_{true} + A_{15}$ similiarly good for the *A. variabilis* run (i.e. no drift) but not as good for *A. cylindrica* (slight drift effect).
+
+```{r "ISO_IRMS_calib_residuals", fig.width=10, fig.height=8}
+data_w_calibs %>% 
+  iso_unnest_data(select = everything()) %>% 
+  filter(type == "standard") %>% 
+  iso_plot_data(
+    x = name, y = d15N_resid,
+    shape = run, color = tex_calib,
+    lines = FALSE, points = TRUE
+  ) + 
+  facet_wrap(~tex_calib, labeller = latex_labeller) +
+  guides(color = "none")
+```
+
+### Apply calibrations
+
+Apply the calibrations as discussed above. Inversion of the calibration is done with the [`investr`](https://cran.r-project.org/web/packages/investr/index.html) package. Standard errors for each data point based on the calibration are calculated using bionmial proportion confidence intervals (Wald intervals).
+
+```{r}
+data_calibrated <- data_w_calibs %>% 
+  filter( (run == "A. cylindrica" & d15N_calib == "delta_and_ampl_and_time") | (run == "A. variabilis" & d15N_calib == "delta_and_ampl")) %>% 
+  iso_apply_calibration(
+    predict = true_d15N,
+    calibration = "d15N",
+    calculate_error = TRUE
+  ) %>% 
+  # unnest the data
+  iso_unnest_data()
+```
+
+### Inspect calibration results
+
+The comparison of the predicted value in the standards along with the standard error in the prediction (the inherent error of the calibration itself = the analytical precision) provides a measure of how precise the data is. 
+
+```{r}
+data_calibrated %>% 
+  # look only at the standards
+  filter(type == "standard") %>% 
+  # check for each compound (+ other run groupings if appropriate)
+  group_by(run, name) %>% 
+  # generate summary table comparing the 
+  iso_generate_summary_table(
+    raw_d15N = `d 15N/14N`, 
+    true_d15N, 
+    # this is the value predicated by the calibration
+    d15N_pred = true_d15N_pred, 
+    # and this is the estimated error based on the calibration
+    d15N_error = true_d15N_pred_se
+  ) %>% 
+  select(-true_d15N_sd, -d15N_error_sd)
+```
+
+## Final Data
+
+Visualization of the final standard-corrected $\delta^{15}N$ vs Air N2 highlights the extrapolations inherent in the measurement. Due to the lack of a more depleted $\delta^{15}N$ standard, the sample measurements are extrapolated from a standard 2-point calibration in isotope space. However, a few samples also display extremely low signal intensities (<1000 mV) well outside the calibration range and in a region that might well be affected by linearity effects. These are in fact samples from the lowest pressure condition (0.1 bar) where not enough biomass accumulated for the desired minimum sample amount. These are difficult to evaluate without a calibration that spans this low signal intensity and are therefore not further considered.
+
+```{r "ISO_IRMS_calibrated_data", fig.width=12, fig.height=10}
+data_calibrated %>% 
+  filter(type %in% c("sample", "standard")) %>% 
+  iso_plot_data(
+    x = `Ampl 28`,
+    y = true_d15N_pred, 
+    y_error = true_d15N_pred_se,
+    color = type,
+    points = TRUE,
+    lines = FALSE
+  ) + 
+  labs(y = TeX("Final $\\delta^{15}N$"), x = "Peak Amplitude [mV]")
+```
+
+## Combine with metadata
+
+Resolve the analytical IDs to experimental conditions.
+
+```{r "ISO_IRMS_data_overview"}
+metadata <- read_excel(file.path("data", "2018_Silverman_et_al-isotope_data_sample_metadata.xlsx"))
+
+data_d15N_org <- data_calibrated %>% 
+  filter(`Ampl 28` > 1000, type == "sample") %>% 
+  left_join(metadata, by = c("run" = "organism", "name" = "analysis_id"))
+
+# visualize
+data_d15N_org %>% 
+   iso_plot_data(
+    x = pN2, y = true_d15N_pred,y_error = true_d15N_pred_se,
+    color = run, points = TRUE, lines = FALSE
+  ) + labs(y = TeX("Final $\\delta^{15}N$"), x = "pN2 [bar]")
+```
+
+
+# N2 gas $\delta^{15}N$
+
+To calculate fractionation factors, the isotopic composition of the source N2 during nitrogen fixation is equally important and was measured on a Gasbench-IRMS.
+
+## Load Gasbench-IRMS data
+
+```{r}
+isofiles <- iso_read_continuous_flow(
+  file.path("data","2018_Silverman_et_al-isotope_data_N2_source.cf.rda"))
+```
+
+## Chromatograms
+
+```{r "ISO_IRMS_gasbench_chroms", fig.width = 10, fig.height = 8}
+isofiles %>% iso_plot_continuous_flow_data("28")
+```
+
+## Data Table
+
+```{r}
+data <- isofiles %>% 
+  # exclude file that required auto-dilution because of too much sample
+  iso_get_vendor_data_table(select = c(Rt, `Ampl 28`, `d 15N/14N`), include_file_info = c(file_datetime, Analysis, starts_with("Id"))) %>% 
+  # correct switched samples on autosampler
+  mutate(name = ifelse(Analysis %in% c("8233", "8236"), "191502", ifelse(Analysis == "8234", "APV292", `Identifier 1`))) %>% 
+  # focus on last analyte peaks
+  filter(Rt > 380) %>% 
+  group_by(Analysis, name, `Identifier 2`) %>% 
+  summarize_at(vars(`Ampl 28`, `d 15N/14N`), list(mean = mean, sd = sd)) %>% 
+  arrange(name)
+data
+```
+
+## Processing
+
+```{r "ISO_IRMS_gasbench_raw_data", fig.width = 8, fig.height= 6}
+# visualize mean and error of the measured standard (191502) and N2 gas used in the experiment (APV292)
+data %>% 
+  filter(is.na(`Identifier 2`) | `Identifier 2` != "blank") %>% 
+  ggplot() +
+  aes(Analysis, `d 15N/14N_mean`, size = `Ampl 28_mean`) + 
+  geom_errorbar(map = aes(ymax = `d 15N/14N_mean` + `d 15N/14N_sd`, ymin = `d 15N/14N_mean` - `d 15N/14N_sd`), width = 0, size = 1) +
+  geom_point() +
+  facet_wrap(~name, scales = "free_y") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 0)) +
+  labs(title = "avgs +/- 1 std. dev for last 5 peaks")
+
+# numerical summary
+data_summary <- data %>% 
+  filter(is.na(`Identifier 2`) | `Identifier 2` != "blank") %>% 
+  group_by(name) %>% 
+  summarize(
+    n_analyses = n(),
+    d15N = mean(`d 15N/14N_mean`),
+    d15N_min = min(`d 15N/14N_mean`),
+    d15N_max = max(`d 15N/14N_mean`),
+    d15N_run_sd = sd(`d 15N/14N_mean`),
+    d15N_analysis_max_sd = max(`d 15N/14N_sd`)
+  )
+data_summary
+```
+
+## Calibration
+
+```{r}
+N2_data <- data_frame(
+  # known reference values of 191502
+  d15_known_vs_air = -1.9,
+  d15_known_vs_air.sigma = 0.3,
+  # calculate means and errors of each N2
+  d15_meas_std = filter(data_summary, name == "191502")$d15N,
+  d15_meas_std.sigma = filter(data_summary, name == "191502")$d15N_run_sd,
+  d15_meas_x = filter(data_summary, name == "APV292")$d15N,
+  d15_meas_x.sigma = filter(data_summary, name == "APV292")$d15N_run_sd
+) %>% 
+  mutate(
+    eps_x_vs_std = (d15_meas_x - d15_meas_std) / (d15_meas_x/1000 + 1),
+    val_temp = (1 + d15_known_vs_air/1000) * (1 + d15_meas_x/1000) / (1 + d15_meas_std/1000),
+    err_temp = abs(val_temp) * sqrt( (d15_known_vs_air.sigma/(d15_known_vs_air + 1000))^2  + (d15_meas_std.sigma/(d15_meas_std + 1000))^2 + (d15_meas_x.sigma/(d15_meas_x + 1000))^2 ),
+    err2_temp = abs(val_temp) * sqrt( (0/(d15_known_vs_air + 1000))^2  + (d15_meas_std.sigma/(d15_meas_std + 1000))^2 + (d15_meas_x.sigma/(d15_meas_x + 1000))^2 ),
+    d_x_vs_air = (val_temp - 1)*1000,
+    d_x_vs_air.sigma_prec = 1000*err_temp,
+    d_x_vs_air.sigma_abs = 1000*err2_temp
+  ) %>% select(-val_temp, -err_temp, -err2_temp) 
+
+N2_data
+```
+
+# Fractionation factors ($\epsilon$)
+
+Calculate the resulting fractionation factors of the biomass N vs. source N2 and aggregate all information for the isotope data table.
+
+## Analytical precision and error propagation
+
+```{r}
+# max. predicted analytical error
+Norg_pred_se <- 
+  data_frame(
+    name = "pred. analytical precision",
+    prec_permil = max(data_d15N_org$true_d15N_pred_se)
+  )
+# std. deviation of the standards
+Norg_stds_sd <- data_calibrated %>% filter(name %in% c("acetanilide1", "acetanilide2")) %>% 
+  group_by(name) %>% 
+  summarize(prec_permil = sd(true_d15N_pred))
+
+# all 3 error estimates 
+bind_rows(
+  Norg_pred_se,
+  Norg_stds_sd
+)
+
+# --> use the most conservative one (predicted analytical precision from the calibration)
+Norg_precision <- Norg_pred_se$prec_permil
+message("Estimated analytical precision for Norg: ", signif(Norg_precision, 2), " permil")
+N2_precision <- N2_data$d_x_vs_air.sigma_abs
+message("Estimated analytical precision for N2: ", signif(N2_precision, 2), " permil")
+
+# propagated error to epsilons
+eps_analytical_sigma <- sqrt(Norg_precision^2 + N2_precision^2)
+message("Estimated analytical precision for epsilon Norg/N2 values: ", eps_analytical_sigma)
+```
+
+## Export summary data table
+
+```{r}
+summary <- 
+  data_d15N_org %>% 
+  mutate(eps = ((true_d15N_pred/1000 + 1)/(N2_data$d_x_vs_air/1000 + 1) - 1) * 1000) %>% 
+  select(organism = run, pN2, replicate, eps) %>% 
+  mutate(eps_sigma_analytical = eps_analytical_sigma, eps_sigma_absolute = N2_data$d15_known_vs_air.sigma)
+
+# printout
+summary
+
+# export
+summary %>% openxlsx::write.xlsx(file.path("data", "2018_Silverman_et_al-isotope_data.xlsx"))
+```

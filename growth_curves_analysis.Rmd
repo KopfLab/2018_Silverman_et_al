@@ -11,6 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
+    df_print: paged
 subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [growth_curves_analysis.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/growth_curves_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
@@ -133,7 +134,7 @@ growth_rates <-
   ) %>% 
   select(-bootstrap, -data)
 growth_rates %>% write.xlsx(file.path("data", "2018_Silverman_et_al-growth_rate_data.xlsx"))
-kable(growth_rates, d=2)
+growth_rates
 ```
 
 ## Visualization

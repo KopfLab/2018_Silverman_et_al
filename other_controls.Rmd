@@ -1,0 +1,61 @@
+---
+title: "Analysis: Other Controls"
+author: "Silverman et al."
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  html_document: 
+    css: stylesheet.css
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+    toc_float: true
+    toc_depth: 3
+    code_folding: show
+subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [isotope_calibration.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/other_controls.Rmd)"
+editor_options:
+  chunk_output_type: inline
+---
+
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # dplyr, tidyr, ggplot
+library(latex2exp) # for latex plot labels
+library(readxl) # read excel file
+source(file.path("lib", "functions.R"))
+knitr::opts_chunk$set(
+  dev=c("png", "pdf"), dev.args=list(pdf = list(encoding="WinAnsi", useDingbats=FALSE)),
+  fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
+```
+
+# Growth without nitrogen fixation (BG11+ medium)
+
+*Anabaena cylindrica* growing in nitrate replete medium (BG11+) under different partial pressure of N2.
+
+```{r "SI_BG11+_control", fig.width = 6, fig.height = 4}
+# read data
+read_excel(
+  file.path("data", "2018_Silverman_et_al-controls_data.xlsx"), 
+  sheet = "BG11+") %>% 
+  # plot
+  ggplot() +
+  # plot-wide aesthetics
+  aes(x = day, y = OD750, shape = type, 
+      color = paste(pN2, "bar"), fill = paste(pN2, "bar")) +
+  # all data (small translucent points)
+  geom_point(size = 2, alpha = 0.5, color = "black") +
+  # averages and lines connection them
+  stat_summary(fun.y = mean, geom = "line", size = 1) +
+  stat_summary(fun.y = mean, geom = "point", color = "black", size = 4) +
+  # scale
+  scale_x_continuous(breaks = 0:10) +
+  scale_color_manual(values = cbPalette[c(2,5)]) +
+  scale_fill_manual(values = cbPalette[c(2,5)]) +
+  scale_shape_manual(values = c(21:26)) +
+  # labels
+  labs(x = "day", y = TeX("$OD_{750}$"), shape = "", 
+       color = expression("pN"[2]), fill = expression("pN"[2])) +
+  # theme
+  theme_figure() +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+```
+
