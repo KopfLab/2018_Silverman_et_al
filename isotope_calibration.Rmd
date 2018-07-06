@@ -31,7 +31,7 @@ opts_chunk$set(
   fig.keep="all", fig.path=file.path("figures", "2018_Silverman_et_al-"))
 ```
 
-Processed using [isoreader](http://isoreader.kopflab.org) version `r packageVersion("isoreader")` and [isoprocessor](http://isoprocessor.kopflab.org/) version `r packageVersion("isoprocessor")`. To install these exact versions, run `devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")` and `devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")`, respectively.
+Processed using the pre-release packages [isoreader](http://isoreader.kopflab.org) version `r packageVersion("isoreader")` and [isoprocessor](http://isoprocessor.kopflab.org/) version `r packageVersion("isoprocessor")`. To install the exact same versions from the time of writing, run `devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")` and `devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")`, respectively.
 
 # Biomass $\delta^{15}N$
 
@@ -272,7 +272,7 @@ data_w_calibs %>%
 
 ### Apply calibrations
 
-Apply the calibrations as discussed above. 
+Apply the calibrations as discussed above. Inversion of the calibration is done with the [`investr`](https://cran.r-project.org/web/packages/investr/index.html) package. Standard errors for each data point based on the calibration are calculated using bionmial proportion confidence intervals (Wald intervals).
 
 ```{r}
 data_calibrated <- data_w_calibs %>% 

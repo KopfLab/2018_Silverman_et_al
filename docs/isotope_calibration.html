@@ -256,7 +256,7 @@ opts_chunk$set(
   collapse = TRUE, comment = &quot;#&gt;&quot;,
   dev=c(&quot;png&quot;, &quot;pdf&quot;), dev.args=list(pdf = list(encoding=&quot;WinAnsi&quot;, useDingbats=FALSE)),
   fig.keep=&quot;all&quot;, fig.path=file.path(&quot;figures&quot;, &quot;2018_Silverman_et_al-&quot;))</code></pre>
-<p>Processed using <a href="http://isoreader.kopflab.org">isoreader</a> version 0.9.19.9000 and <a href="http://isoprocessor.kopflab.org/">isoprocessor</a> version 0.2.6.9000. To install these exact versions, run <code>devtools::install_github(&quot;Kopflab/isoreader&quot;, ref = &quot;v2018_Silverman&quot;)</code> and <code>devtools::install_github(&quot;Kopflab/isoprocessor&quot;, ref = &quot;v2018_Silverman&quot;)</code>, respectively.</p>
+<p>Processed using the pre-release packages <a href="http://isoreader.kopflab.org">isoreader</a> version 0.9.19.9000 and <a href="http://isoprocessor.kopflab.org/">isoprocessor</a> version 0.2.6.9000. To install the exact same versions from the time of writing, run <code>devtools::install_github(&quot;Kopflab/isoreader&quot;, ref = &quot;v2018_Silverman&quot;)</code> and <code>devtools::install_github(&quot;Kopflab/isoprocessor&quot;, ref = &quot;v2018_Silverman&quot;)</code>, respectively.</p>
 <div id="biomass-delta15n" class="section level1">
 <h1><span class="header-section-number">1</span> Biomass <span class="math inline">\(\delta^{15}N\)</span></h1>
 <p>Biomass nitrogen isotopic composition was measured on an EA-IRMS as described in the methods section of the manuscript. The following code steps through the data processing and calibration to convert measured values to values vs. the international reference standard (Air N2).</p>
@@ -505,7 +505,7 @@ data_w_calibs %&gt;%
 </div>
 <div id="apply-calibrations" class="section level3">
 <h3><span class="header-section-number">2.3.2</span> Apply calibrations</h3>
-<p>Apply the calibrations as discussed above.</p>
+<p>Apply the calibrations as discussed above. Inversion of the calibration is done with the <a href="https://cran.r-project.org/web/packages/investr/index.html"><code>investr</code></a> package. Standard errors for each data point based on the calibration are calculated using bionmial proportion confidence intervals (Wald intervals).</p>
 <pre class="r"><code>data_calibrated &lt;- data_w_calibs %&gt;% 
   filter( (run == &quot;A. cylindrica&quot; &amp; d15N_calib == &quot;delta_and_ampl_and_time&quot;) | (run == &quot;A. variabilis&quot; &amp; d15N_calib == &quot;delta_and_ampl&quot;)) %&gt;% 
   iso_apply_calibration(

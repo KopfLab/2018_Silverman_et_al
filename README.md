@@ -16,7 +16,10 @@ The quickest and easiest way is to use RStudio.
  1. Download and install [RStudio](http://www.rstudio.com/products/rstudio/download/) for your operating system
  1. Download a [zip file of this repository](https://github.com/KopfLab/2017_Silverman_et_al/archive/master.zip) and unpack it in an easy to find directory on your computer
  1. Start RStudio and select **File** --> **Open Project...** from the menu, browse to the repository folder from the zip file and select the `project.Rproj` file.
- 1. Install the required libraries by running the following command in the Console in RStudio: install.packages(c("tidyverse", "readxl", "openxlsx", "knitr", "latex2exp", "boot", "broom")) or by installing them manually in the RStudio's Packages manager.
+ 1. Install the required libraries by running the following command in the Console in RStudio: `install.packages(c("tidyverse", "readxl", "openxlsx", "knitr", "latex2exp", "boot", "broom", "devtools"))` or by installing them manually in the RStudio's Packages manager.
+ 1. Install the pre-release IRMS data libraries [isoreader](http://isoreader.kopflab.org) and [isoprocessor](http://isoprocessor.kopflab.org/) by running the following commands in the Console in RStudio: 
+  - `devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")`
+  - `devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")`
  1. Open any of the R Markdown (.Rmd) files in the file browser
  1. To generate an HTML report ("knit HTML"), select File --> Knit from the menu. The HTML report will be displayed upon successful completion (it might take a minute or two for files with more complex calculations or figures) and is saved as a standalone file in the same directory (these are the files made [available online](https://2017_silverman_et_al.kopflab.org/) and linked in the SI). All generated data figures are saved as PDF and PNG in the figures/ sub-directory. All generated data tables are saved as XLSX in the tables/ sub-directory.
  
