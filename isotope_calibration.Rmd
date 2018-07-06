@@ -221,7 +221,7 @@ data_w_calibs <- data_w_stds %>%
 
 ### Calibration Parameters
 
-The visualization of the calibration parameters reveals that as expected $^{15}\delta_{true}$ is the most important regressor (the scale contraction), and that the $^{15}\delta_{true} \cdot A_{15}$ and $^{15}\delta_{true} \cdot DT$ cross terms are not statistically significant although the linear intensity term $A_{15}$ is relevant for both analytical runs. Additionally, the *A. cylindrica* run also showing a statistically relevant (`***` = p.value < 0.001) linear drift correction term ($DT$) but no the *A. variabilis* run (no drift). See residuals below for additional information on these multivariate calibration regressions. 
+The visualization of the calibration parameters reveals that as expected $^{15}\delta_{true}$ is the most important regressor (the scale contraction), and that the $^{15}\delta_{true} \cdot A_{28}$ and $^{15}\delta_{true} \cdot DT$ cross terms are not statistically significant although the linear intensity term $A_{28}$ is relevant for both analytical runs. Additionally, the *A. cylindrica* run also showing a statistically relevant (`***` = p.value < 0.001) linear drift correction term ($DT$) but no the *A. variabilis* run (no drift). See residuals below for additional information on these multivariate calibration regressions. 
 
 ```{r "ISO_IRMS_calib_params", fig.width = 7, fig.height = 10, message=FALSE}
 # coefficient summary table
@@ -233,12 +233,12 @@ data_w_calibs <- data_w_calibs %>%
     tex_calib = as_factor(d15N_calib)%>% 
       fct_recode(
         "$^{15}\\delta_{true}$" = "delta_only",
-        "$^{15}\\delta_{true} + A_{15}$" = "delta_and_ampl",
-        "$^{15}\\delta_{true} + A_{15} + ^{15}\\delta_{true} \\cdot A_{15}$" = "delta_cross_ampl",
+        "$^{15}\\delta_{true} + A_{28}$" = "delta_and_ampl",
+        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28}$" = "delta_cross_ampl",
         "$^{15}\\delta_{true} + DT$" = "delta_and_time",
         "$^{15}\\delta_{true} + DT + ^{15}\\delta_{true} \\cdot DT$" = "delta_cross_time",
-        "$^{15}\\delta_{true} + A_{15} + DT$" = "delta_and_ampl_and_time",
-        "$^{15}\\delta_{true} + A_{15} + ^{15}\\delta_{true} \\cdot A_{15} + DT$" = "delta_cross_ampl_and_time"
+        "$^{15}\\delta_{true} + A_{28} + DT$" = "delta_and_ampl_and_time",
+        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28} + DT$" = "delta_cross_ampl_and_time"
       )
   )
 
@@ -249,13 +249,13 @@ data_w_calibs %>%
     x = tex_calib,
     shape = run,
     color = signif,
-    select_from_summary = c(RMSD = sigma)
+    select_from_summary = c(`RMSD [permil]` = sigma)
   ) +
   scale_x_discrete(labels = latex_labeller) + 
   labs(x = NULL)
 ```
 
-A look at the residuals confirms that the calibration that takes both drift and intensity in addition to the $\delta$ value into consideration ($^{15}\delta_{true} + A_{15} + DT$) captures most of the variation in the standards with $^{15}\delta_{true} + A_{15}$ similiarly good for the *A. variabilis* run (i.e. no drift) but not as good for *A. cylindrica* (slight drift effect).
+A look at the residuals confirms that the calibration that takes both drift and intensity in addition to the $\delta$ value into consideration ($^{15}\delta_{true} + A_{28} + DT$) captures most of the variation in the standards with $^{15}\delta_{true} + A_{28}$ similiarly good for the *A. variabilis* run (i.e. no drift) but not as good for *A. cylindrica* (slight drift effect).
 
 ```{r "ISO_IRMS_calib_residuals", fig.width=10, fig.height=8}
 data_w_calibs %>% 
