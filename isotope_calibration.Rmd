@@ -261,11 +261,13 @@ A look at the residuals confirms that the calibration that takes both drift and 
 data_w_calibs %>% 
   iso_unnest_data(select = everything()) %>% 
   filter(type == "standard") %>% 
+  mutate(name_run = str_c(name, "\n", run)) %>% 
   iso_plot_data(
-    x = name, y = d15N_resid,
+    x = name_run, y = d15N_resid,
     shape = run, color = tex_calib,
     lines = FALSE, points = TRUE
   ) + 
+  labs(x = "") +
   facet_wrap(~tex_calib, labeller = latex_labeller) +
   guides(color = "none")
 ```
@@ -310,9 +312,9 @@ data_calibrated %>%
 
 ## Final Data
 
-Visualization of the final standard-corrected $\delta^{15}N$ vs Air N2 highlights the extrapolations inherent in the measurement. Due to the lack of a more depleted $\delta^{15}N$ standard, the sample measurements are extrapolated from a standard 2-point calibration in isotope space. However, a few samples also display extremely low signal intensities (<1000 mV) well outside the calibration range and in a region that might well be affected by linearity effects. These are in fact samples from the lowest pressure condition (0.1 bar) where not enough biomass accumulated for the desired minimum sample amount. These are difficult to evaluate without a calibration that spans this low signal intensity and are therefore not further considered.
+Visualization of the final standard-corrected $\delta^{15}N$ vs Air N2 highlights the extrapolations inherent in the measurement. Due to the lack of a more depleted $\delta^{15}N$ standard, the sample measurements are extrapolated from a standard 2-point calibration in isotope space. However, a few samples also display extremely low signal intensities (<1000 mV) well outside the calibration range and in a region that might well be affected by linearity effects. These are in fact samples from the lowest pressure condition (0.0 bar) where not enough biomass accumulated for the desired minimum sample amount. These are difficult to evaluate without a calibration that spans this low signal intensity and are therefore not further considered.
 
-```{r "ISO_IRMS_calibrated_data", fig.width=12, fig.height=10}
+```{r "ISO_IRMS_calibrated_data", fig.width=8, fig.height=6}
 data_calibrated %>% 
   filter(type %in% c("sample", "standard")) %>% 
   iso_plot_data(
