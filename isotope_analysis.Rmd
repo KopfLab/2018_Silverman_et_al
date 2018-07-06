@@ -11,6 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
+    df_print: paged
 subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/isotope_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
@@ -94,7 +95,7 @@ isotope_data_table <-
   select(organism, pN2, n_bio_reps, eps_mean, sigma_analytical)
 isotope_data_table %>% export_data_table("isotope_numbers.xlsx")
 
-isotope_data_table %>%  kable(d=3)
+isotope_data_table
 ```
 
 
@@ -152,7 +153,7 @@ eq_regression <- eq_data %>%
   )
 
 # display
-eq_regression %>% select(-data, -bootstrap) %>% kable(d=4)
+eq_regression %>% select(-data, -bootstrap)
 
 # visualize data
 eq_data %>% 
@@ -224,7 +225,7 @@ model <-
 
 # save and display
 model %>% select(-data) %>% write.xlsx(file.path("data", "2018_Silverman_et_al-isotope_model.xlsx"))
-model %>% select(-data) %>% kable(d=3)
+model %>% select(-data)
 ```
 
 ## Visualize isotope model

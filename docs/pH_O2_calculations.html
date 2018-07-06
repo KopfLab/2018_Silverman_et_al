@@ -11,7 +11,7 @@
 
 <meta name="author" content="Silverman et al." />
 
-<meta name="date" content="2018-06-12" />
+<meta name="date" content="2018-07-05" />
 
 <title>Analysis: pH and O2 calculations</title>
 
@@ -240,14 +240,14 @@ div.tocify {
 <h1 class="title toc-ignore">Analysis: pH and O2 calculations</h1>
 <h3 class="subtitle"><em>Source file: <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/">SI GitHub Repository</a> / <a href="http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/pH_O2_calculations.Rmd">carbonate_chemistry.Rmd</a></em></h3>
 <h4 class="author"><em>Silverman et al.</em></h4>
-<h4 class="date"><em>12 Jun 2018</em></h4>
+<h4 class="date"><em>05 Jul 2018</em></h4>
 
 </div>
 
 
 <div id="yield-experiment" class="section level1">
 <h1><span class="header-section-number">1</span> Yield Experiment</h1>
-<p>Total growth yield of <em>Anabaena cylindrica</em> from a single headspace flush with 0.2 bar CO2.</p>
+<p>Total growth yield of <em>Anabaena cylindrica</em> from a single headspace flush with 0.2 bar <span class="math inline">\(CO_2\)</span>.</p>
 <pre class="r"><code>OD_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverman_et_al-controls_data.xlsx&quot;), sheet = &quot;pCO2 yield OD&quot;)
 
 # OD yield
@@ -295,8 +295,8 @@ OD_plot</code></pre>
 <h1><span class="header-section-number">2</span> Equations</h1>
 <div id="gas-dissolution" class="section level2">
 <h2><span class="header-section-number">2.1</span> Gas dissolution</h2>
-<p>CO2 is moderately soluable in water forming aqueous CO2 and hydrated carbonic acid with a Henry’s law constant of <span class="math inline">\(K_H = 3.3 \cdot 10^{-4} \frac{mol}{m^3 Pa} = 0.033 \frac{M}{atm}\)</span> at <span class="math inline">\(T = 298.15 K\)</span> (25C).</p>
-<p>O2 is sparingly soluable in water with a Henry’s law constant of <span class="math inline">\(K_H = 1.3 \cdot 10^{-5} \frac{mol}{m^3 Pa} = 0.0013 \frac{M}{atm}\)</span> at <span class="math inline">\(T = 298.15 K\)</span> (25C).</p>
+<p><span class="math inline">\(CO_2\)</span> is moderately soluble in water forming aqueous <span class="math inline">\(CO_2\)</span> and hydrated carbonic acid with a Henry’s law constant of <span class="math inline">\(K_H = 3.3 \cdot 10^{-4} \frac{mol}{m^3 Pa} = 0.033 \frac{M}{atm}\)</span> at <span class="math inline">\(T = 298.15 K\)</span> (25C).</p>
+<p><span class="math inline">\(O_2\)</span> is sparingly soluble in water with a Henry’s law constant of <span class="math inline">\(K_H = 1.3 \cdot 10^{-5} \frac{mol}{m^3 Pa} = 0.0013 \frac{M}{atm}\)</span> at <span class="math inline">\(T = 298.15 K\)</span> (25C).</p>
 <p>All constants and temperature scaling relationships for Henry’s law constants used here are from Sander, R.: Compilation of Henry’s law constants (version 4.0) for water as solvent, Atmos. Chem. Phys., 15, 4399-4981, <a href="https://doi.org/10.5194/acp-15-4399-2015" class="uri">https://doi.org/10.5194/acp-15-4399-2015</a>, 2015.</p>
 </div>
 <div id="carbonate-system" class="section level2">
@@ -314,7 +314,7 @@ OD_plot</code></pre>
   H_2O \rightleftharpoons H^+ + OH^- \\
   &amp;\textrm{with dissociation constant } [H^+][OH^-] = K_w = 10^{-14} \\
 \textrm{dissolved inorganic carbon (DIC): } &amp;
-  [DIC] = [H_2CO_3^*] + [HCO3_-] + [CO_3^{2-}] \\
+  [DIC] = [H_2CO_3^*] + [HCO_3^-] + [CO_3^{2-}] \\
 \textrm{charge balance (not considering any other solutes): } &amp;
   [H^+] - [HCO_3^-] - 2\cdot[CO_3^{2-}] - [OH^-] = 0
 \end{aligned}
@@ -340,6 +340,7 @@ OD_plot</code></pre>
 <p>For a closed system such as the one used in this study (stoppered culture tubes), the mass balance based on total moles of carbon in the entire system provides an additional constraint.</p>
 <div id="mass-balance" class="section level3">
 <h3><span class="header-section-number">2.4.1</span> Mass Balance</h3>
+<p>Total inorganic carbon (<span class="math inline">\(C_T\)</span>) can be mass balanced using the ideal gas law and relevant acid dissociation and gas dissolution constants.</p>
 <p><span class="math display">\[
 \begin{aligned}
 C_{T} &amp;= n_{CO_2(g)} + V_{liquid} \cdot DIC \\
@@ -351,7 +352,7 @@ C_{T} &amp;= P_{CO_2} \cdot \left[\frac{V_{headspace}}{RT} + V_{liquid} \cdot K_
 </div>
 <div id="final-equation" class="section level3">
 <h3><span class="header-section-number">2.4.2</span> Final equation</h3>
-<p>With these constraints, a final equation relating pH to the added base (<span class="math inline">\([Na+^]\)</span>), total buffer (<span class="math inline">\([A_T]\)</span>), total inorganic carbon (<span class="math inline">\(C_t\)</span>) and headspace + liquid volume in the system can be derived and solved for pH by standard numerical root-finding algorithms.</p>
+<p>With these constraints, a final equation relating pH to the added base (<span class="math inline">\([Na^+]\)</span>), total buffer (<span class="math inline">\([A_T]\)</span>), total inorganic carbon (<span class="math inline">\(C_T\)</span>) and headspace + liquid volume in the system can be derived and solved for pH by standard numerical root-finding algorithms.</p>
 <p><span class="math display">\[
 \begin{aligned}
 \left[H^+\right] + [Na^+] - 
@@ -373,7 +374,7 @@ C_{T} &amp;= P_{CO_2} \cdot \left[\frac{V_{headspace}}{RT} + V_{liquid} \cdot K_
 </div>
 <div id="system" class="section level1">
 <h1><span class="header-section-number">3</span> System</h1>
-<p>The experimental system in this study consists of 25mL anaerobic culture tubes with 10mL of medium and 15mL of headspace initially adjusted to a pH of 7.8 in the presence of 20mM HEPES (pKa = 7.5) under atmospheric <span class="math inline">\(CO_2\)</span> conditions (~400 ppm) at room temperature. Upon quick flushing of the headspace with different gas mixtures that contain 0.2 bar CO2, the total inorganic carbon (<span class="math inline">\(C_T\)</span>) is increased which leads to a decrease in pH. As the inorganic carbon is consumed through photosynthetic activity, the pH increases again and in parallel molecular oxygen (<span class="math inline">\(O_2\)</span>) is produced with the 1:1 stoichiometry of photosynthesis (<span class="math inline">\(CO_2 + H_2O \rightarrow O_2 + CH_2O\)</span>) and distributes between the liquid and gas phase according to the Henry’s law constant for <span class="math inline">\(O_2\)</span> (equations for closed system <span class="math inline">\(O_2\)</span> below). Efficient equilibration between the headspace and liquid during growth is achieved by continuous agitation. The following plots illustrate the pH and O2 variations that can result after an inorgic carbon spike.</p>
+<p>The experimental system in this study consists of 25 mL anaerobic culture tubes with 10 mL of medium initially adjusted to a pH of 7.8 in the presence of 20 mM HEPES (pKa = 7.5), and 15 mL of headspace under atmospheric <span class="math inline">\(CO_2\)</span> conditions (~400 ppm) at room temperature. Upon quick flushing of the headspace with different gas mixtures that contain 0.2 bar <span class="math inline">\(CO_2\)</span>, the total inorganic carbon (<span class="math inline">\(C_T\)</span>) is increased which leads to a decrease in pH. As the inorganic carbon is consumed through photosynthetic activity, the pH increases again and in parallel molecular oxygen (<span class="math inline">\(O_2\)</span>) is produced with the 1:1 stoichiometry of photosynthesis (<span class="math inline">\(CO_2 + H_2O \rightarrow O_2 + CH_2O\)</span>) and distributes between the liquid and gas phase according to the Henry’s law constant for <span class="math inline">\(O_2\)</span> (equations for closed system <span class="math inline">\(O_2\)</span> below). Efficient equilibration between the headspace and liquid during growth is achieved by continuous agitation. The following plots illustrate the pH and <span class="math inline">\(O_2\)</span> variations that can result after an inorganic carbon spike.</p>
 <p><span class="math display">\[
 \begin{aligned}
 O_{2(total)} &amp;= n_{O_2(g)} + V_{liquid} \cdot [O_{2(aq)}] = \frac{P_{O_2} \cdot V_{headspace}}{RT} + K_H \cdot P_{O_2} \cdot V_{liquid} \\
