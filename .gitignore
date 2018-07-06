@@ -5,7 +5,8 @@
 *.Rproj
 figures/*
 tables/*
-*_cache/*
+*cache/*
 ~$*
 *.html
+*.dxf
 !/docs/*.html
