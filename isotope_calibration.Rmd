@@ -232,13 +232,13 @@ data_w_calibs <- data_w_calibs %>%
   mutate(
     tex_calib = as_factor(d15N_calib)%>% 
       fct_recode(
-        "$^{15}\\delta_{true}$" = "delta_only",
-        "$^{15}\\delta_{true} + A_{28}$" = "delta_and_ampl",
-        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28}$" = "delta_cross_ampl",
-        "$^{15}\\delta_{true} + DT$" = "delta_and_time",
-        "$^{15}\\delta_{true} + DT + ^{15}\\delta_{true} \\cdot DT$" = "delta_cross_time",
-        "$^{15}\\delta_{true} + A_{28} + DT$" = "delta_and_ampl_and_time",
-        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28} + DT$" = "delta_cross_ampl_and_time"
+        "$^{15}\\delta_{true}$ (#1)" = "delta_only",
+        "$^{15}\\delta_{true} + A_{28}$ (#2)" = "delta_and_ampl",
+        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28}$ (#3)" = "delta_cross_ampl",
+        "$^{15}\\delta_{true} + DT$ (#4)" = "delta_and_time",
+        "$^{15}\\delta_{true} + DT + ^{15}\\delta_{true} \\cdot DT$ (#5)" = "delta_cross_time",
+        "$^{15}\\delta_{true} + A_{28} + DT$ (#6)" = "delta_and_ampl_and_time",
+        "$^{15}\\delta_{true} + A_{28} + ^{15}\\delta_{true} \\cdot A_{28} + DT$ (#7)" = "delta_cross_ampl_and_time"
       )
   )
 
