@@ -223,7 +223,7 @@ data_w_calibs <- data_w_stds %>%
 
 The visualization of the calibration parameters reveals that as expected $^{15}\delta_{true}$ is the most important regressor (the scale contraction), and that the $^{15}\delta_{true} \cdot A_{28}$ and $^{15}\delta_{true} \cdot DT$ cross terms are not statistically significant although the linear intensity term $A_{28}$ is relevant for both analytical runs. Additionally, the *A. cylindrica* run also showing a statistically relevant (`***` = p.value < 0.001) linear drift correction term ($DT$) but no the *A. variabilis* run (no drift). See residuals below for additional information on these multivariate calibration regressions. 
 
-```{r "ISO_IRMS_calib_params", fig.width = 7, fig.height = 10, message=FALSE}
+```{r "ISO_IRMS_calib_params", fig.width = 8, fig.height = 11, message=FALSE}
 # coefficient summary table
 data_w_calibs %>% iso_unnest_calibration_parameters("d15N")
 
@@ -252,6 +252,7 @@ data_w_calibs %>%
     select_from_summary = c(`RMSD [permil]` = sigma)
   ) +
   scale_x_discrete(labels = latex_labeller) + 
+  facet_grid(term ~ run, scales = "free_y") + 
   labs(x = NULL)
 ```
 
