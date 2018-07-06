@@ -1,10 +1,56 @@
-# constantes and templates ====
+# constants =====
 
 # start random seed
 set.seed(42) 
 
 # color-blind palette (source: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/)
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7", "#F0E442", "#999999")
+
+# plotting  ====
+
+#' Latex labeller
+#' 
+#' Latex labeller for ggplot that will interpret latex equations correctly (i.e. anything between $$). 
+#' Works for both the \code{labels} parameter of discrete ggplot2 scales as well as the \code{labeller} of facets.
+latex_labeller <- function(labels, ...) {
+  
+  require("dplyr")
+  require("tidyr")
+  require("purrr")
+  require("latex2exp")
+  require("rlang")
+  
+  # figure out if we're in a scale or facet labeller
+  facet_labels <- methods::is(labels, "data.frame")
+  if (!facet_labels) labels <- data_frame(..x.. = as.character(labels))
+  
+  # gather labels
+  labels <- labels %>% 
+    # add position info
+    mutate(pos = row_number()) %>% 
+    # gather labels
+    mutate_if(is.factor, as.character) %>% 
+    gather(var, val, -pos) %>% as_data_frame() 
+  
+  # convert latex to expression
+  labels <- labels %>% 
+    mutate(
+      val = map(val, ~latex2exp::TeX(.x))
+    )
+  
+  # spread data frame again
+  labels <- labels %>% 
+    filter(!is.na(pos)) %>% 
+    spread(var, val) %>% 
+    select(-pos)
+
+  # return appropriate value for different labellers
+  if (!facet_labels)
+    labels <- quo(c(!!!map(labels$..x.., unname))) %>% eval_tidy()
+  
+  return(labels)
+}
+class(latex_labeller) <- c("function", "labeller")
 
 # figure themes
 theme_figure <- function(legend = TRUE, grid = TRUE, text_size = 20, axis_text_size = NULL) {

@@ -11,6 +11,7 @@ output:
     toc_float: true
     toc_depth: 3
     code_folding: show
+    df_print: paged
 subtitle: "Source file: [SI GitHub Repository](http://www.github.com/KopfLab/2018_Silverman_et_al/) / [heterocyst_analysis.Rmd](http://www.github.com/KopfLab/2018_Silverman_et_al/blob/master/heterocyst_analysis.Rmd)"
 editor_options:
   chunk_output_type: inline
@@ -142,7 +143,7 @@ heterocyst_data_table <-
 heterocyst_data_table %>% export_data_table("heterocyst_numbers.xlsx")
 
 # show data
-heterocyst_data_table %>% kable(d = 1)
+heterocyst_data_table 
 ```
 
 ## Evaluate differences between pN2 conditions
@@ -178,8 +179,7 @@ heterocyst_differences <-
 
 # list significance levels for both bootstrapped and WMW test
 heterocyst_differences %>% 
-  select(organism, pN2_a, pN2_b, t_signif, wilcox_signif) %>% 
-  kable()
+  select(organism, pN2_a, pN2_b, t_signif, wilcox_signif) 
 
 # export as data table for SI
 heterocyst_differences_table <-
@@ -194,7 +194,7 @@ heterocyst_differences_table <-
 heterocyst_differences_table %>% export_data_table("heterocyst_comparison.xlsx")
 
 # show data
-heterocyst_differences_table %>% kable(d=2)
+heterocyst_differences_table
 ```
 
 
@@ -275,7 +275,7 @@ mm_model <-
   ) 
 
 # print result of the fit
-mm_model %>% select(organism, growth_phase, n_converged, Km.bar, Km_se.bar) %>% kable(d=3)
+mm_model %>% select(organism, growth_phase, n_converged, Km.bar, Km_se.bar) 
 ```
 
 
