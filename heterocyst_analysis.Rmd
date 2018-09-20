@@ -232,7 +232,7 @@ growth_rate_data <- read_excel(file.path("data", "2018_Silverman_et_al-growth_ra
 
 ## Calculate michaelis menten fit
 
-Based on all data for *Anabaena cylindrica*.
+Based on non-stationary phase data for *Anabaena cylindrica*.
 
 ```{r}
 mm_model <- 

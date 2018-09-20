@@ -99,6 +99,9 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
 }
@@ -446,7 +449,7 @@ growth_rate_data &lt;- read_excel(file.path(&quot;data&quot;, &quot;2018_Silverm
 </div>
 <div id="calculate-michaelis-menten-fit" class="section level2">
 <h2><span class="header-section-number">4.2</span> Calculate michaelis menten fit</h2>
-<p>Based on all data for <em>Anabaena cylindrica</em>.</p>
+<p>Based on non-stationary phase data for <em>Anabaena cylindrica</em>.</p>
 <pre class="r"><code>mm_model &lt;- 
   # combine all the information
   heterocyst_data_summary %&gt;% 
