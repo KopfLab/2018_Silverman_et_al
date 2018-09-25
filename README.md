@@ -13,15 +13,12 @@ The fully compiled analysis files are available as [HTML reports](https://2018_s
 
 ## How can I run this code?
 
-### Option 1: Run it in the cloud
+### Option 1: Run it in the cloud using [binder](https://mybinder.org/)
 
-Use the following link to load this entire repository in an online RStudio instance in [![Binder](http://mybinder.org/badge.svg)](http://beta.mybinder.org/v2/gh/kopflab/2018_Silverman_et_al/binder?urlpath=rstudio) (note that this will take a few minutes to launch because of all the dependencies). 
-
-```
-devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")
-devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")
-```
-
+1. Use the following link to load this entire repository and all its dependencies in an online RStudio instance: [![Binder](http://mybinder.org/badge.svg)](http://beta.mybinder.org/v2/gh/kopflab/2018_Silverman_et_al/binder?urlpath=rstudio) (note that this may take a few minutes to launch). 
+1. Open any of the R Markdown (.Rmd) files in the file browser
+1. To generate an HTML report ("knit HTML"), select File --> Knit from the menu. The HTML report will be displayed upon successful completion (it might take a minute or two for files with more complex calculations or figures) and is saved as a standalone file in the same directory (these are the files made [available online](https://2018_silverman_et_al.kopflab.org/) and linked in the SI). All generated data figures are saved as PDF and PNG in the `figures` sub-directory. All generated data tables are saved as XLSX in the `tables` sub-directory.
+1. Make sure to download any edited or generated files you are interested in. They will disappear when you close the binder instance (or it gets terminated due to longer inactivity).
 
 ### Option 2: Run it on your desktop
 

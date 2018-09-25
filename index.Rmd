@@ -1,5 +1,5 @@
 ---
-title: "Supporting Information"
+title: "Supporting Information [![Binder](http://mybinder.org/badge.svg)](http://beta.mybinder.org/v2/gh/kopflab/2018_Silverman_et_al/master?urlpath=rstudio)"
 author: "Silverman, Kopf, Gordon, Bebout, Som"
 subtitle: "Morphological and isotopic changes of heterocystous cyanobacteria in response to N2 partial pressure. Geobiology. 2018;00:1-16. [https://doi.org/10.1111/gbi.1231214](https://doi.org/10.1111/gbi.1231214)"
 date: "Last update: `r format(Sys.Date(), '%d %b %Y')`"
