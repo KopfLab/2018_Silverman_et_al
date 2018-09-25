@@ -18,7 +18,7 @@ The fully compiled analysis files are available as [HTML reports](https://2018_s
 1. Use the following link to load this entire repository and all its dependencies in an online RStudio instance: [![Binder](http://mybinder.org/badge.svg)](http://beta.mybinder.org/v2/gh/kopflab/2018_Silverman_et_al/binder?urlpath=rstudio) (note that this may take a few minutes to launch). 
 1. Open any of the R Markdown (.Rmd) files in the file browser
 1. To generate an HTML report ("knit HTML"), select File --> Knit from the menu. The HTML report will be displayed upon successful completion (it might take a minute or two for files with more complex calculations or figures) and is saved as a standalone file in the same directory (these are the files made [available online](https://2018_silverman_et_al.kopflab.org/) and linked in the SI). All generated data figures are saved as PDF and PNG in the `figures` sub-directory. All generated data tables are saved as XLSX in the `tables` sub-directory.
-1. Make sure to download any edited or generated files you are interested in. They will disappear when you close the binder instance (or it gets terminated due to longer inactivity).
+1. Make sure to download any edited or generated files you want to keep. They will disappear once you close the binder instance (or once it gets terminated due to inactivity).
 
 ### Option 2: Run it on your desktop
 
@@ -42,4 +42,3 @@ We hope that this code, or any part of it, might prove useful to other members o
 ## Troubleshooting notes
 
 The R Markdown files in this repository make use of various R modules for data processing, plotting and modelling. All of these should be installed automatically when the first R Markdown file is knitted (if the knitting fails because of a missing package, please install it manually, an error will indicate which package could not be installed). 
- 
