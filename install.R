@@ -6,7 +6,4 @@ install.packages("knitr")
 install.packages("latex2exp")
 install.packages("boot")
 install.packages("broom")
-
 install.packages("devtools")
-devtools::install_github("Kopflab/isoreader", ref = "v2018_Silverman")
-devtools::install_github("Kopflab/isoprocessor", ref = "v2018_Silverman")
